@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Booking, CreateBookingRequest } from '../models/booking.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class BookingApiService {
- //private baseUrl = 'http://localhost:8080/api';
-  private baseUrl = 'https://netproxi.onrender.com/api';
+ 
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

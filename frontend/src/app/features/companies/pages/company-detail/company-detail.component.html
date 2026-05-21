@@ -280,129 +280,229 @@
     </div>
   </ng-container>
 
-  <!-- Error State -->
-  <div *ngIf="(error$ | async) && !(loading$ | async)" class="error-container">
-    <i class="fas fa-exclamation-triangle"></i>
-    <h3>Impossible de charger les détails</h3>
-    <p>{{ error$ | async }}</p>
-    <button class="btn-primary" (click)="retry()">Réessayer</button>
-  </div>
-
-  <!-- BOOKING MODAL -->
+  <!-- ===== BOOKING MODAL ===== -->
   <div class="modal-backdrop" *ngIf="bookingModalOpen()" (click)="closeBookingModal()">
     <div class="modal booking-modal" (click)="$event.stopPropagation()">
       <button class="modal-close" (click)="closeBookingModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
+        <i class="fas fa-times"></i>
       </button>
 
+      <!-- ── SUCCESS ── -->
+      <div *ngIf="bookingSuccess()" class="success-view">
+        <div class="success-icon">
+          <i class="fas fa-check"></i>
+        </div>
+        <h3>Réservation confirmée !</h3>
+        <p>Un email de confirmation a été envoyé à <strong>{{ bookingForm.email }}</strong>.</p>
+        <div class="booking-details-card">
+          <div class="detail-row"><i class="fas fa-store"></i> {{ bookingCompany()?.name }}</div>
+          <div class="detail-row"><i class="fas fa-location-dot"></i> {{ bookingForm.address }}</div>
+          <div class="detail-row"><i class="fas fa-calendar"></i> {{ selectedDate() }} à {{ selectedTime() }}</div>
+          <div class="detail-row"><i class="fas fa-tools"></i> {{ getServiceName(selectedService()) }}</div>
+        </div>
+        <button class="btn-primary full-width step-next" (click)="closeBookingModal()">Fermer</button>
+      </div>
+
+      <!-- ── FORM ── -->
       <div *ngIf="!bookingSuccess()">
-        <h2>Réserver chez {{ bookingCompany()?.name }}</h2>
-        
-        <!-- Step indicator -->
-        <div class="booking-steps">
-          <span [class.active]="bookingStep() === 1" [class.done]="bookingStep() > 1">1</span>
-          <div class="step-line" [class.active]="bookingStep() > 1"></div>
-          <span [class.active]="bookingStep() === 2" [class.done]="bookingStep() > 2">2</span>
-          <div class="step-line" [class.active]="bookingStep() > 2"></div>
-          <span [class.active]="bookingStep() === 3">3</span>
+        <div class="modal-header">
+          <div class="modal-company">
+            <div class="modal-avatar">{{ getInitials(bookingCompany()?.name || '') }}</div>
+            <div>
+              <h2>{{ bookingCompany()?.name }}</h2>
+              <span class="modal-subtitle">Nouvelle réservation</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Step 1: Contact Info -->
+        <!-- Step indicator -->
+        <div class="booking-steps">
+          <div class="step-item" *ngFor="let s of [1,2,3]" [class.active]="bookingStep() === s" [class.done]="bookingStep() > s">
+            <div class="step-circle">
+              <i class="fas fa-check" *ngIf="bookingStep() > s"></i>
+              <span *ngIf="bookingStep() <= s">{{ s }}</span>
+            </div>
+            <span class="step-label">{{ ['Coordonnées','Service','Créneau'][s-1] }}</span>
+          </div>
+          <div class="step-track">
+            <div class="step-progress" [style.width.%]="((bookingStep()-1)/2)*100"></div>
+          </div>
+        </div>
+
+        <!-- STEP 1: Contact -->
         <div *ngIf="bookingStep() === 1" class="booking-step-content">
-          <h3>Vos coordonnées</h3>
+          <h3 class="step-title"><i class="fas fa-user"></i> Vos coordonnées</h3>
+
           <div class="form-group">
-            <label>Nom complet *</label>
-            <input type="text" [ngModel]="bookingForm.fullName" (ngModelChange)="bookingForm.fullName = $event" placeholder="Jean Dupont" />
+            <label>Nom complet <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input type="text" [ngModel]="bookingForm.fullName" (ngModelChange)="bookingForm.fullName = $event" placeholder="Jean Dupont" />
+            </div>
           </div>
+
           <div class="form-group">
-            <label>Email *</label>
-            <input type="email" [ngModel]="bookingForm.email" (ngModelChange)="bookingForm.email = $event" placeholder="jean@exemple.fr" />
+            <label>Email <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope"></i>
+              <input type="email" [ngModel]="bookingForm.email" (ngModelChange)="bookingForm.email = $event" placeholder="jean@exemple.fr" />
+            </div>
           </div>
+
           <div class="form-group">
-            <label>Téléphone *</label>
-            <input type="tel" [ngModel]="bookingForm.phone" (ngModelChange)="bookingForm.phone = $event" placeholder="06 12 34 56 78" />
+            <label>Téléphone <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-phone"></i>
+              <input type="tel" [ngModel]="bookingForm.phone" (ngModelChange)="bookingForm.phone = $event" placeholder="06 12 34 56 78" />
+            </div>
           </div>
-          <button class="btn-primary full-width" (click)="nextBookingStep()"
-            [disabled]="!bookingForm.fullName || !bookingForm.email || !bookingForm.phone">
-            Suivant
+
+          <button
+            class="btn-primary full-width step-next"
+            (click)="nextBookingStep()"
+            [disabled]="!bookingForm.fullName || !bookingForm.email || !bookingForm.phone"
+          >
+            Continuer <i class="fas fa-arrow-right"></i>
           </button>
         </div>
 
-        <!-- Step 2: Service & Address -->
+        <!-- STEP 2: Service + address -->
         <div *ngIf="bookingStep() === 2" class="booking-step-content">
-          <h3>Service et adresse</h3>
+          <h3 class="step-title"><i class="fas fa-tools"></i> Service et logement</h3>
+
           <div class="form-group">
-            <label>Service souhaité *</label>
-            <select [ngModel]="selectedService()" (ngModelChange)="selectedService.set($event)">
-              <option value="">Sélectionner un service</option>
-              <option *ngFor="let service of getServices(bookingCompany()!)" [value]="service.id">
-                {{ service.name }}
-                <span *ngIf="service.basePrice"> - {{ service.basePrice }}€</span>
-              </option>
-            </select>
+            <label>Prestation <span class="required">*</span></label>
+            <div class="service-picker">
+              <button
+                class="service-option"
+                *ngFor="let service of getServices(bookingCompany()!)"
+                [class.selected]="selectedService() === service.id"
+                (click)="selectedService.set(service.id ?? '')"
+              >
+                <span class="service-name">{{ service.name }}</span>
+                <span class="service-price">{{ service.basePrice }}€</span>
+              </button>
+            </div>
           </div>
+
           <div class="form-group">
-            <label>Adresse du service *</label>
-            <input type="text" [ngModel]="bookingForm.address" (ngModelChange)="bookingForm.address = $event" placeholder="12 Rue de la République, 69002 Lyon" />
+            <label>Adresse du service <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-location-dot"></i>
+              <input type="text" [ngModel]="bookingForm.address" (ngModelChange)="bookingForm.address = $event" placeholder="12 Rue de la République, 69002 Lyon" />
+            </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type de bien</label>
+              <select [ngModel]="bookingForm.propertyType" (ngModelChange)="bookingForm.propertyType = $event">
+                <option value="apartment">Appartement</option>
+                <option value="house">Maison</option>
+                <option value="studio">Studio</option>
+                <option value="office">Bureau</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pièces</label>
+              <select [ngModel]="bookingForm.rooms" (ngModelChange)="bookingForm.rooms = $event">
+                <option value="1">1 pièce</option>
+                <option value="2">2 pièces</option>
+                <option value="3">3 pièces</option>
+                <option value="4">4 pièces</option>
+                <option value="5">5+ pièces</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label>Type de propriété</label>
-            <select [ngModel]="bookingForm.propertyType" (ngModelChange)="bookingForm.propertyType = $event">
-              <option value="apartment">Appartement</option>
-              <option value="house">Maison</option>
-              <option value="studio">Studio</option>
-            </select>
+            <label>Surface (m²)</label>
+            <div class="input-wrapper">
+              <i class="fas fa-ruler-combined"></i>
+              <input type="number" [ngModel]="bookingForm.surface" (ngModelChange)="bookingForm.surface = $event" placeholder="50" min="10" />
+            </div>
           </div>
+
           <div class="button-row">
-            <button class="btn-secondary" (click)="prevBookingStep()">Retour</button>
-            <button class="btn-primary" (click)="nextBookingStep()" [disabled]="!selectedService() || !bookingForm.address">
-              Suivant
+            <button class="btn-secondary step-next" (click)="prevBookingStep()"><i class="fas fa-arrow-left"></i> Retour</button>
+            <button class="btn-primary step-next" (click)="nextBookingStep()" [disabled]="!selectedService() || !bookingForm.address">
+              Continuer <i class="fas fa-arrow-right"></i>
             </button>
           </div>
         </div>
 
-        <!-- Step 3: Date & Confirmation -->
+        <!-- STEP 3: Date + summary -->
         <div *ngIf="bookingStep() === 3" class="booking-step-content">
-          <h3>Date et confirmation</h3>
+          <h3 class="step-title"><i class="fas fa-calendar-alt"></i> Choisir un créneau</h3>
+
           <div class="form-group">
-            <label>Date souhaitée *</label>
-            <input type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [min]="todayDate" />
+            <label>Date <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-calendar"></i>
+              <input type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [min]="todayDate" />
+            </div>
           </div>
+
           <div class="form-group">
-            <label>Créneau horaire *</label>
-            <select [ngModel]="selectedTime()" (ngModelChange)="selectedTime.set($event)">
-              <option value="">Sélectionner un créneau</option>
-              <option *ngFor="let slot of timeSlots" [value]="slot.value">
+            <label>Heure <span class="required">*</span></label>
+            <div class="time-picker">
+              <button
+                class="time-option"
+                *ngFor="let slot of timeSlots"
+                [class.selected]="selectedTime() === slot.value"
+                (click)="selectedTime.set(slot.value)"
+              >
                 {{ slot.label }}
-              </option>
-            </select>
+              </button>
+            </div>
           </div>
+
           <div class="form-group">
             <label>Instructions spéciales</label>
-            <textarea [ngModel]="bookingForm.notes" (ngModelChange)="bookingForm.notes = $event" rows="3" placeholder="Informations supplémentaires..."></textarea>
+            <div class="textarea-wrapper">
+              <textarea
+                [ngModel]="bookingForm.notes"
+                (ngModelChange)="bookingForm.notes = $event"
+                rows="2"
+                placeholder="Code d'accès, étage, animaux, allergie aux produits..."
+              ></textarea>
+            </div>
           </div>
+
+          <!-- Summary card -->
+          <div class="booking-summary">
+            <div class="summary-title">Récapitulatif</div>
+            <div class="summary-row"><i class="fas fa-tools"></i><span>{{ getServiceName(selectedService()) }}</span></div>
+            <div class="summary-row"><i class="fas fa-location-dot"></i><span>{{ bookingForm.address }}</span></div>
+            <div class="summary-row" *ngIf="selectedDate()">
+              <i class="fas fa-calendar"></i>
+              <span>{{ selectedDate() | date:'EEEE d MMMM':'':'fr' }} · {{ selectedTime() }}</span>
+            </div>
+            <div class="summary-row" *ngIf="bookingCompany()?.services?.[0]?.basePrice">
+              <i class="fas fa-tag"></i>
+              <span>À partir de <strong>{{ bookingCompany()?.services?.[0]?.basePrice }}€</strong></span>
+            </div>
+          </div>
+
           <div class="button-row">
-            <button class="btn-secondary" (click)="prevBookingStep()">Retour</button>
-            <button class="btn-primary" (click)="confirmBooking()" [disabled]="bookingLoading() || !selectedDate() || !selectedTime()">
+            <button class="btn-secondary step-next" (click)="prevBookingStep()"><i class="fas fa-arrow-left"></i> Retour</button>
+            <button
+              class="btn-primary step-next btn-confirm"
+              (click)="confirmBooking()"
+              [disabled]="bookingLoading() || !selectedDate() || !selectedTime()"
+            >
               <span class="spinner" *ngIf="bookingLoading()"></span>
-              <span *ngIf="!bookingLoading()">Confirmer</span>
+              <span *ngIf="!bookingLoading()"><i class="fas fa-check-circle"></i> Confirmer</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      <div *ngIf="bookingSuccess()" class="success-message">
-        <div class="success-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 6L9 17l-5-5"/>
-          </svg>
+          <p class="booking-disclaimer">
+            <i class="fas fa-lock"></i>
+            Paiement sécurisé · Annulation gratuite 24h avant
+          </p>
         </div>
-        <h3>Réservation confirmée !</h3>
-        <p>Vous recevrez une confirmation par email.</p>
-        <button class="btn-primary" (click)="closeBookingModal()">Fermer</button>
       </div>
     </div>
   </div>
+
 </div>

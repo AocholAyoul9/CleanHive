@@ -1,17 +1,18 @@
+/* ─── LOGIN PAGE (MODAL) ────────────────────────────── */
 .login-page {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);          // slightly darker for better contrast in dark mode
+  backdrop-filter: blur(4px);              // optional: matches modal overlay style
   z-index: 1000;
 }
+
 .close-btn {
   position: absolute;
   top: 10px;
@@ -20,54 +21,83 @@
   background: transparent;
   font-size: 18px;
   cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--text);
+  }
 }
 
 .login-card {
   position: relative;
-  background: white;
+  background: var(--surface);              // uses theme surface (white in light, dark card in dark)
   padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-
+  border-radius: 1rem;                     // consistent with dashboard cards
+  box-shadow: var(--shadow-md);            // theme shadow
   width: 100%;
   max-width: 400px;
-
   animation: fadeIn 0.3s ease;
+
   h2 {
     margin-bottom: 1.5rem;
     text-align: center;
+    color: var(--text-dark);
   }
 }
 
-.form-group {
+// Re-using .form-group but overriding for login modal (already defined above, but we keep it local)
+.login-page .form-group {
   margin-bottom: 1rem;
 
   label {
     display: block;
     margin-bottom: 0.25rem;
     font-weight: 500;
+    color: var(--text);
   }
 
   input,
   select {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 0.75rem;                     // slightly larger for better touch
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;               // rounded like dashboard inputs
+    background: var(--white);              // keeps input background consistent
+    color: var(--text);
     font-size: 1rem;
     box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: var(--shadow-sm);
+    }
   }
 }
 
 button[type="submit"] {
   width: 100%;
   padding: 0.75rem;
-  background: #007bff;
-  color: white;
+  background: var(--primary);
+  color: var(--white);
   border: none;
-  border-radius: 4px;
+  border-radius: 0.75rem;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-brand);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
 
   &:disabled {
     opacity: 0.6;
@@ -76,10 +106,11 @@ button[type="submit"] {
 }
 
 .error-message {
-  background: #fde8e8;
-  color: #c0392b;
+  background: var(--status-cancelled-bg);  
+  color: var(--status-cancelled-text);     
   padding: 0.75rem;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  border-left: 4px solid var(--status-cancelled-border);
 }

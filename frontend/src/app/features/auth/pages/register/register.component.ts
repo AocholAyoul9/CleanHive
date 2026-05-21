@@ -14,6 +14,10 @@ import { selectLoading, selectError } from '../../state/auth.selectors';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterPageComponent implements OnInit {
+  showPassword = false;
+  showConfirmPassword = false;
+  confirmPassword = '';
+  passwordMismatch = false;
   accountType: 'client' | 'company' = 'client';
 
   formData = {
@@ -37,14 +41,32 @@ export class RegisterPageComponent implements OnInit {
     this.error$ = this.store.select(selectError);
   }
 
+  togglePasswordVisibility(field: 'password' | 'confirm') {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+    } else {
+      this.showConfirmPassword = !this.showConfirmPassword;
+    }
+  }
+
+  checkPasswordMatch() {
+    this.passwordMismatch = this.formData.password !== this.confirmPassword;
+  }
+
+
   onSubmit(): void {
-    const { username, email, password, phone, address, companyName } = this.formData;
+    if (this.passwordMismatch) {
+      return;
+    }
+    const { username, email, password, phone, address, companyName } =
+      this.formData;
     if (!username || !email || !password) return;
-    
-    const userData = this.accountType === 'company'
-      ? { username, email, password, phone, address, companyName }
-      : { username, email, password, phone, address };
-    
+
+    const userData =
+      this.accountType === 'company'
+        ? { username, email, password, phone, address, companyName }
+        : { username, email, password, phone, address };
+
     this.store.dispatch(register({ userData, userType: this.accountType }));
   }
 

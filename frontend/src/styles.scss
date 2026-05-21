@@ -311,6 +311,10 @@ $tokens-dark: (
 
 }
 
+/* ─── Global Styles ─────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
 /* ─── Apply Themes ───────────────────────── */
 body {
   @include theme($tokens-light);
@@ -404,3 +408,5 @@ body.dark-theme {
   padding: 1.5rem;
   color: var(--text);
 }
+
+

@@ -5,11 +5,13 @@
     <div class="pro-hero-content">
       <h1>Soyez trouvé par des clients <span class="highlight">près de chez vous</span></h1>
       <p class="pro-hero-subtitle">
-        Inscrivez votre entreprise de nettoyage sur NetProxi. Les clients de votre quartier vous réservent directement en ligne. Simple, rapide et sans démarchage.
+        Inscrivez votre entreprise de nettoyage sur NetProxi. Les clients de votre quartier vous réservent directement
+        en ligne. Simple, rapide et sans démarchage.
       </p>
       <div class="pro-hero-cta">
-        <a href="#signup-form" class="cta-btn">Ajouter mon entreprise →</a>
-        <span class="pro-hero-note">Gratuit · Sans commission pendant 30 jours</span>
+        <a (click)="scrollToSignup()" class="cta-btn">
+          Ajouter mon entreprise →
+        </a> <span class="pro-hero-note">Gratuit · Sans commission pendant 30 jours</span>
       </div>
     </div>
     <div class="pro-hero-visual" aria-hidden="true">
@@ -76,7 +78,7 @@
         <h3>Planning maîtrisé</h3>
         <p>Tableau de bord pour accepter ou refuser les demandes selon vos disponibilités.</p>
       </div>
-   <!----  <div class="benefit-card">
+      <!----  <div class="benefit-card">
         <i class="fas fa-file-invoice-dollar benefit-icon"></i>
         <h3>Paiement intégré</h3>
         <p>Plus de relances : le client paye en ligne, vous êtes viré sous 48h.</p>
@@ -101,16 +103,19 @@
     <form class="signup-form" #proForm="ngForm" (ngSubmit)="submitProForm(proForm)">
       <div class="form-group">
         <label for="companyName">Nom de l’entreprise *</label>
-        <input type="text" id="companyName" name="companyName" [(ngModel)]="proData.companyName" required placeholder="Ex: Clean Pro Services">
+        <input type="text" id="companyName" name="companyName" [(ngModel)]="proData.companyName" required
+          placeholder="Ex: Clean Pro Services">
       </div>
       <div class="form-row">
         <div class="form-group">
           <label for="contactName">Votre nom *</label>
-          <input type="text" id="contactName" name="contactName" [(ngModel)]="proData.contactName" required placeholder="Jean Dupont">
+          <input type="text" id="contactName" name="contactName" [(ngModel)]="proData.contactName" required
+            placeholder="Jean Dupont">
         </div>
         <div class="form-group">
           <label for="email">Email professionnel *</label>
-          <input type="email" id="email" name="email" [(ngModel)]="proData.email" required email placeholder="contact@cleanpro.fr">
+          <input type="email" id="email" name="email" [(ngModel)]="proData.email" required email
+            placeholder="contact@cleanpro.fr">
         </div>
       </div>
       <div class="form-group">

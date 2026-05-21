@@ -10,7 +10,6 @@ import {
   OnDestroy,
   AfterViewInit,
 } from '@angular/core';
-import { Store } from '@ngrx/store';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -37,8 +36,7 @@ type SortMode = 'distance' | 'rating' | 'available';
   styleUrls: ['./nearby-companies.component.scss'],
 })
 export class NearbyCompaniesComponent
-  implements OnInit, OnDestroy, AfterViewInit
-{
+  implements OnInit, OnDestroy, AfterViewInit {
   private api = inject(CompaniesApiService);
   private bookingFlow = inject(BookingFlowService);
   private destroy$ = new Subject<void>();
@@ -173,12 +171,11 @@ export class NearbyCompaniesComponent
         this.map = new google.maps.Map(this.mapContainer.nativeElement, {
           center: this.mapCenter(),
           zoom: 12,
+          gestureHandling: 'greedy',
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
-          zoomControlOptions: {
-            position: google.maps.ControlPosition.RIGHT_CENTER,
-          },
+          zoomControl: false,
           styles: [
             {
               featureType: 'poi',
@@ -199,6 +196,8 @@ export class NearbyCompaniesComponent
 
     setTimeout(() => clearInterval(interval), 8000);
   }
+
+
 
   // ══════════════════════════════════════════════════════════
   // PLACES / SEARCH
@@ -224,7 +223,7 @@ export class NearbyCompaniesComponent
             (predictions, status) => {
               this.addressSuggestions =
                 status === google.maps.places.PlacesServiceStatus.OK &&
-                predictions
+                  predictions
                   ? predictions
                   : [];
             },
@@ -412,7 +411,7 @@ export class NearbyCompaniesComponent
       const marker = new google.maps.Marker({
         position: { lat, lng },
         map: this.map,
-        title: company.name,
+        title: `${company.name} - À partir de ${company.services?.[0]?.basePrice || 0}€`, 
         icon: this.buildMarkerIcon(company, isSelected),
         zIndex: isSelected ? 1000 : 1,
       });
@@ -442,7 +441,34 @@ export class NearbyCompaniesComponent
         const p = m.getPosition();
         if (p) bounds.extend(p);
       });
+
+      // Add the user location to bounds if it exists
+      if (this.userLocationMarker) {
+        const userPos = this.userLocationMarker.getPosition();
+        if (userPos) bounds.extend(userPos);
+      }
+
       this.map.fitBounds(bounds);
+
+
+      const minZoomLevel = 12;
+      const currentZoom = this.map.getZoom();
+      if (currentZoom && currentZoom > minZoomLevel) {
+        this.map.setZoom(minZoomLevel);
+      }
+      // OR use a listener to ensure minimum zoom after fitBounds completes
+      google.maps.event.addListenerOnce(this.map, 'bounds_changed', () => {
+        if (this.map) {
+          const zoom = this.map.getZoom();
+          if (zoom && zoom > minZoomLevel) {
+            this.map.setZoom(minZoomLevel);
+          }
+        }
+      });
+    } else {
+      // If no companies, set a default reasonable zoom level
+      this.map.setCenter(this.mapCenter());
+      this.map.setZoom(12);
     }
   }
 
@@ -451,21 +477,31 @@ export class NearbyCompaniesComponent
     isSelected: boolean,
   ): google.maps.Icon {
     const available = company.isAvailableNow !== false;
-    const rating = company.rating?.toFixed(1) ?? '4.5';
     const bg = isSelected ? '#2563eb' : available ? '#10b981' : '#ef4444';
-    const size = isSelected ? 48 : 40;
+    const size = isSelected ? 52 : 44;
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size + 6}" viewBox="0 0 ${size} ${size + 6}">
-      <ellipse cx="${size / 2}" cy="${size + 3}" rx="${size / 2 - 4}" ry="3" fill="rgba(0,0,0,.2)"/>
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${bg}" stroke="white" stroke-width="2.5"/>
-      <text x="${size / 2}" y="${size / 2 + 4}" text-anchor="middle" fill="white" font-size="${isSelected ? 12 : 10}"
-        font-family="system-ui" font-weight="700">${rating}</text>
-    </svg>`;
+    const basePrice = company.services?.[0]?.basePrice || 0;
+    let priceSymbol = '€';
+    if (basePrice > 80) priceSymbol = '€€€';
+    else if (basePrice > 50) priceSymbol = '€€';
+    else if (basePrice > 0) priceSymbol = '€';
+
+    // Create marker with cleaning icon and price
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size + 8}" viewBox="0 0 ${size} ${size + 8}">
+    <ellipse cx="${size / 2}" cy="${size + 4}" rx="${size / 2 - 4}" ry="3" fill="rgba(0,0,0,.2)"/>
+    <!-- Main circle -->
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${bg}" stroke="white" stroke-width="2.5"/>
+    <!-- Cleaning icon (broom) -->
+    <text x="${size / 2}" y="${size / 2 - 4}" text-anchor="middle" fill="white" font-size="${isSelected ? 16 : 13}">🧹</text>
+    <!-- Price indicator -->
+    <rect x="${size / 2 - 12}" y="${size / 2 + 4}" width="24" height="12" rx="6" fill="white" opacity="0.9"/>
+    <text x="${size / 2}" y="${size / 2 + 13}" text-anchor="middle" fill="${bg}" font-size="9" font-weight="700">${priceSymbol}</text>
+  </svg>`;
 
     return {
       url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-      scaledSize: new google.maps.Size(size, size + 6),
-      anchor: new google.maps.Point(size / 2, size + 6),
+      scaledSize: new google.maps.Size(size, size + 8),
+      anchor: new google.maps.Point(size / 2, size + 8),
     };
   }
 
@@ -482,27 +518,29 @@ export class NearbyCompaniesComponent
     (window as any).__cpActions = (window as any).__cpActions ?? {};
     (window as any).__cpActions[company.id] = () => this.bookCompany(company);
 
-    return `<div style="font-family:'DM Sans',system-ui,sans-serif;min-width:190px;padding:4px 2px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <div style="width:36px;height:36px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#2563eb;font-size:13px">
+    // Enhanced info window with better styling and cleaning company details
+    return `<div style="font-family:'DM Sans',system-ui,sans-serif;min-width:210px;padding:6px 4px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#e6f7e6;display:flex;align-items:center;justify-content:center;font-weight:700;color:#2e7d32;font-size:14px">
           ${this.getInitials(company.name)}
         </div>
         <div>
-          <div style="font-weight:700;font-size:13px;color:#1e293b">${company.name}</div>
-          <div style="font-size:11px;color:#64748b">⭐ ${rating}${dist ? ' · 📍 ' + dist : ''}</div>
+          <div style="font-weight:700;font-size:14px;color:#1e293b">${company.name}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">⭐ ${rating}${dist ? ' · 📍 ' + dist : ''}</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
-        <span style="width:6px;height:6px;border-radius:50%;background:${avail ? '#10b981' : '#ef4444'};display:inline-block"></span>
-        <span style="font-size:11px;font-weight:600;color:${avail ? '#10b981' : '#ef4444'}">${avail ? 'Disponible' : 'Indisponible'}</span>
+      ${company.services?.[0]?.name ? `<div style="font-size:11px;color:#475569;margin-bottom:8px;background:#f8fafc;padding:4px 8px;border-radius:16px;display:inline-block">🧹 ${company.services[0].name}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:12px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${avail ? '#10b981' : '#ef4444'};display:inline-block"></span>
+        <span style="font-size:11px;font-weight:600;color:${avail ? '#10b981' : '#ef4444'}">${avail ? 'Disponible maintenant' : 'Indisponible'}</span>
       </div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:8px">
         <button onclick="(window.__cpActions['${company.id}'])()"
-          style="flex:1;padding:7px 0;background:#2563eb;color:white;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer">
+          style="flex:1;padding:7px 0;background:#2563eb;color:white;border:none;border-radius:24px;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.2s">
           Réserver
         </button>
         <button onclick="window.location.href='/company/${company.id}'"
-          style="padding:7px 12px;background:#f1f5f9;color:#475569;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer">
+          style="padding:7px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:24px;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.2s">
           Détails
         </button>
       </div>
@@ -513,7 +551,6 @@ export class NearbyCompaniesComponent
     this.infoWindows.forEach((iw) => iw.close());
   }
 
- 
   // ══════════════════════════════════════════════════════════
   // INTERACTIONS
   // ══════════════════════════════════════════════════════════

@@ -160,7 +160,7 @@ export class LandingComponent implements OnInit, OnDestroy {
       description: 'Sélectionnez votre créneau, le type de prestation et confirmez en quelques secondes.'
     },
     {
-      icon: 'fas fa-user-hard-hat',
+      icon: 'fas fa-undo-alt',
       title: 'Intervention garantie',
       description: 'Un agent qualifié intervient à l\'heure prévue. Satisfaction 100% garantie ou on revient gratuitement.'
     }
@@ -169,7 +169,7 @@ export class LandingComponent implements OnInit, OnDestroy {
   // Simplified core features (merged with comparison)
   coreFeatures = [
     {
-      icon: 'fas fa-shield-check',
+      icon: 'fas fa-shield-alt',
       title: 'Entreprises certifiées',
       description: 'Chaque partenaire est vérifié : Kbis, assurance RC Pro, références contrôlées.'
     },

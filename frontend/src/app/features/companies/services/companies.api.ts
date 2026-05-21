@@ -5,13 +5,13 @@ import { Company } from '../models/company.model';
 import { ServiceModel } from '../../../shared/models/service.model';
 import { Booking, CreateBookingRequest } from '../../../features/booking/models/booking.model';
 import { NearbyCompany } from '../../client/models/client.model';
-
+import { environment } from '../../../../environments/environment';
 @Injectable({
   providedIn: 'root',
 })
 export class CompaniesApiService {
-  //private baseUrl = 'http://localhost:8080/api';
-   private baseUrl = 'https://netproxi.onrender.com/api';
+ 
+private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
