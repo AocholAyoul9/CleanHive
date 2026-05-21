@@ -111,6 +111,15 @@ export class ProSignupComponent {
     // this.proService.register(this.proData).subscribe({ ... });
   }
 
+  scrollToSignup() {
+  const element = document.getElementById('signup-form');
+
+  element?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+
   stars(n: number): number[] {
     return Array(n).fill(0);
   }

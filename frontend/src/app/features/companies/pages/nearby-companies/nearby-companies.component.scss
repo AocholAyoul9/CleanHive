@@ -503,7 +503,7 @@ $radius-pill:  3rem;
 }
 
 // ═══════════════════════════════════════════════════════════
-// MAP
+// MAP CONTROLS (Organized)
 // ═══════════════════════════════════════════════════════════
 .map {
   position: relative;
@@ -516,39 +516,145 @@ $radius-pill:  3rem;
   height: 100%;
 }
 
-// Radius control
+
+// Radius control (right side)
 .radius-control {
   position: absolute;
   bottom: 20px;
-  right: 20px;
+  right: 600px;
   background: var(--white);
   border-radius: $radius-pill;
   box-shadow: var(--shadow-md);
-  padding: 8px 14px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  z-index: 10;
+  gap: 10px;
+  z-index: 20;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+  }
 
   label {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-muted);
+    letter-spacing: 0.3px;
   }
 
   select {
     border: none;
     outline: none;
-    font-size: .82rem;
+    font-size: 0.82rem;
     font-family: inherit;
     font-weight: 600;
     color: var(--brand);
     background: transparent;
     cursor: pointer;
+    padding: 4px 0;
+    
+    &:hover {
+      color: var(--brand-dark);
+    }
   }
 }
 
-// Custom map marker (pill)
+// ── LEFT SIDE CONTROLS ────────────────────────────────────
+// Map Legend (left side)
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: var(--white);
+  border-radius: $radius-lg;
+  padding: 12px 16px;
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+  font-size: 0.7rem;
+  font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+  min-width: 180px;
+  
+  &:hover {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .legend-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .legend-marker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      
+      &.available {
+        background: #10b981;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      
+      &.unavailable {
+        background: #ef4444;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      
+      &.price {
+        background: white;
+        border: 1.5px solid #10b981;
+        color: #10b981;
+        line-height: 18px;
+        border-radius: 20px;
+        width: auto;
+        padding: 0 6px;
+        min-width: 24px;
+      }
+    }
+    
+    span:not(.legend-marker) {
+      color: var(--text);
+      font-size: 0.7rem;
+      line-height: 1.4;
+    }
+  }
+}
+
+// Sheet toggle (mobile - bottom center)
+.sheet-toggle {
+  display: none;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUSTOM MAP MARKERS
+// ═══════════════════════════════════════════════════════════
 .map-marker-pill {
   display: flex;
   align-items: center;
@@ -600,13 +706,13 @@ $radius-pill:  3rem;
   }
 }
 
-// Map popup (info window)
+// Map popup (info window) - Enhanced for cleaning companies
 .map-popup {
   background: var(--white);
   border-radius: $radius-lg;
   box-shadow: var(--shadow-lg);
   padding: 14px;
-  min-width: 240px;
+  min-width: 260px;
   font-size: 0.82rem;
   display: flex;
   flex-direction: column;
@@ -615,27 +721,52 @@ $radius-pill:  3rem;
   .popup-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    .popup-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--brand-light), var(--brand));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
     strong {
       font-family: 'Sora', sans-serif;
       font-weight: 700;
       font-size: 0.9rem;
+      color: var(--text-dark);
     }
   }
 
   .popup-rating {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     font-size: 0.75rem;
     color: var(--text-muted);
     i { color: var(--rating-star); font-size: 0.7rem; }
+  }
+
+  .popup-service-tag {
+    background: var(--surface);
+    border-radius: $radius-pill;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    color: var(--brand);
+    font-weight: 500;
+    display: inline-block;
+    width: fit-content;
   }
 
   .popup-body {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    margin-top: 4px;
 
     .availability-badge {
       font-size: 0.68rem;
@@ -657,28 +788,25 @@ $radius-pill:  3rem;
 
   .popup-actions {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 8px;
+    margin-top: 8px;
 
     .btn-primary, .btn-secondary {
       font-size: 0.75rem;
-      padding: 6px 12px;
+      padding: 6px 14px;
+      border-radius: $radius-pill;
+    }
+    .btn-primary {
+      flex: 1;
     }
     .btn-secondary {
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text-muted);
-      border-radius: $radius-pill;
       cursor: pointer;
-      &:hover { background: var(--border); }
+      &:hover { background: var(--border); color: var(--text); }
     }
   }
-}
-
-// Sheet toggle (mobile)
-.sheet-toggle {
-  display: none;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -923,6 +1051,7 @@ $radius-pill:  3rem;
     font-size: .875rem;
     font-family: inherit;
     color: var(--text);
+    background-color: var(--white);
     resize: none;
     border-radius: $radius-md;
     &::placeholder { color: #b0bec5; }
@@ -1113,7 +1242,7 @@ $radius-pill:  3rem;
 }
 
 // ═══════════════════════════════════════════════════════════
-// MOBILE
+// MOBILE RESPONSIVE
 // ═══════════════════════════════════════════════════════════
 @media (max-width: 768px) {
   .layout { grid-template-columns: 1fr; }
@@ -1121,6 +1250,59 @@ $radius-pill:  3rem;
   .search-bar { width: calc(100% - 24px); left: 12px; top: 12px; }
 
   .list { display: none; }
+
+  // Mobile map controls adjustments
+  .custom-zoom-control {
+    right: 12px;
+    bottom: 90px;
+    
+    .zoom-btn {
+      width: 38px;
+      height: 38px;
+      font-size: 0.9rem;
+    }
+  }
+
+  .radius-control {
+    bottom: auto;
+    top: 74px;
+    right: 12px;
+    background: rgba(255,255,255,0.95);
+    padding: 6px 12px;
+  }
+
+  .map-legend {
+    bottom: 80px;
+    left: 12px;
+    font-size: 0.65rem;
+    padding: 8px 12px;
+    min-width: 160px;
+    
+    .legend-title {
+      font-size: 0.7rem;
+      margin-bottom: 6px;
+    }
+    
+    .legend-item {
+      gap: 6px;
+      margin-bottom: 4px;
+      
+      .legend-marker {
+        width: 18px;
+        height: 18px;
+        font-size: 0.6rem;
+        
+        &.price {
+          line-height: 14px;
+          padding: 0 4px;
+        }
+      }
+      
+      span:not(.legend-marker) {
+        font-size: 0.65rem;
+      }
+    }
+  }
 
   .sheet-toggle {
     display: flex;
@@ -1146,12 +1328,6 @@ $radius-pill:  3rem;
     i { font-size: .85rem; }
     i:first-child { color: #94a3b8; }
     i:last-child { color: #94a3b8; }
-  }
-
-  .radius-control {
-    bottom: auto;
-    top: 74px;
-    right: 12px;
   }
 
   .bottom-sheet {

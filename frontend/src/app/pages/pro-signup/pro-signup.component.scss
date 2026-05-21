@@ -7,6 +7,7 @@ $radius-card: 1.5rem;
 $radius-pill: 3rem;
 
 .pro-page {
+  min-height: 100vh;
   font-family: 'DM Sans', system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -143,7 +144,7 @@ h2 {
     font-family: 'Sora', sans-serif;
     font-size: 2.5rem;
     font-weight: 800;
-    color: var(--text);
+    color: var(--stat-value);
   }
   .stat-label { color: var(--stat-label); font-size: .9rem; }
 }
