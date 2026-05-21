@@ -32,8 +32,8 @@ public BookingResponseDto createBooking(BookingRequestDto request) {
     // ---------------------------
     // Validate client
     // ---------------------------
-    Client client = clientRepository.findById(request.getClientId())
-            .orElseThrow(() -> new RuntimeException("Client not found"));
+    /*Client client = clientRepository.findById(request.getClientId())
+            .orElseThrow(() -> new RuntimeException("Client not found"));*/
 
     // ---------------------------
     // Validate service
@@ -91,7 +91,7 @@ public BookingResponseDto createBooking(BookingRequestDto request) {
     // Create booking
     // ---------------------------
     Booking booking = new Booking();
-    booking.setClient(client);
+    //booking.setClient(client);
     booking.setService(service);
     booking.setCompany(company);
     booking.setStartTime(start);
