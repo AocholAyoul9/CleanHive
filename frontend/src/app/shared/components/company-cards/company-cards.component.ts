@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Company } from '../../../features/companies/models/company.model';
@@ -12,7 +12,7 @@ import { NearbyCompaniesService } from '../../services/nearby-companies.service'
   templateUrl: './company-cards.component.html',
   styleUrl: './company-cards.component.scss',
 })
-export class CompanyCardsComponent {
+export class CompanyCardsComponent implements OnChanges {
   private nearbyService = inject(NearbyCompaniesService);
 
   @Input() companies: Company[] = [];
@@ -23,6 +23,12 @@ export class CompanyCardsComponent {
 
   @Output() companySelected = new EventEmitter<Company>();
   @Output() bookCompany = new EventEmitter<Company>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['companies']) {
+      console.log('[CompanyCards] companies input', this.companies.length);
+    }
+  }
 
   getInitials(name: string | undefined): string {
     return this.nearbyService.getInitials(name ?? '');

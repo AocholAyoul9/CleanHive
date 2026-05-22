@@ -247,6 +247,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
             .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
 
           console.log('[NearbyCompanies] companies after mapping', this.currentCompanies.length);
+          console.log('[NearbyCompanies] sortedCompanies length', this.sortedCompanies.length);
           if (this.selectedCompany()) {
             const stillPresent = this.currentCompanies.find((company) => company.id === this.selectedCompany()?.id);
             if (!stillPresent) this.selectedCompany.set(null);
