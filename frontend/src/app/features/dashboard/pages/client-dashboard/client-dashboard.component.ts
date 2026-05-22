@@ -13,7 +13,7 @@ import {
 import { Store } from '@ngrx/store';
 import { Observable, Subject, Subscription, debounceTime, takeUntil } from 'rxjs';
 
-import { NearbyCompany } from '../../../client/models/client.model';
+import { ClientProfile, NearbyCompany } from '../../../client/models/client.model';
 import * as ClientSelectors from '../../../client/state/client.selectors';
 import * as ClientActions from '../../../client/state/client.actions';
 
@@ -52,7 +52,7 @@ interface DashboardTab {
   styleUrls: ['./client-dashboard.component.scss'],
 })
 export class ClientDashboardComponent implements OnInit, OnDestroy {
-  profile$: Observable<unknown | null>;
+  profile$: Observable<ClientProfile | null>;
   reservations$: Observable<Booking[]>;
   paginatedReservations$: Observable<Booking[]>;
   nearbyCompanies$: Observable<NearbyCompany[]>;

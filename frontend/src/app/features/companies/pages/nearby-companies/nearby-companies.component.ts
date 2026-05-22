@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule as NgFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 
 import { Company } from '../../models/company.model';
@@ -21,7 +20,6 @@ type SortMode = 'distance' | 'rating' | 'available';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     NgFormsModule,
     CompanyMapComponent,
     CompanyCardsComponent,
@@ -31,13 +29,10 @@ type SortMode = 'distance' | 'rating' | 'available';
   styleUrls: ['./nearby-companies.component.scss'],
 })
 export class NearbyCompaniesComponent implements OnInit, OnDestroy {
-  private nearbyService: NearbyCompaniesService;
+  private nearbyService = inject(NearbyCompaniesService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
-  constructor(nearbyService: NearbyCompaniesService) {
-    this.nearbyService = nearbyService;
-  }
 
   searchQuery = '';
   searchFocused = false;

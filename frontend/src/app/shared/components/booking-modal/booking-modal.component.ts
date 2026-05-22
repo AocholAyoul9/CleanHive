@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -19,7 +19,7 @@ import { NearbyCompaniesService } from '../../services/nearby-companies.service'
 @Component({
   selector: 'app-booking-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './booking-modal.component.html',
   styleUrl: './booking-modal.component.scss',
 })
