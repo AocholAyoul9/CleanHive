@@ -334,90 +334,81 @@
 
       <!-- Companies Tab  -->
       <div *ngIf="(activeTab$ | async) === 'companies'" class="tab-content">
-        <div class="companies-tab">
+        <div class="companies-tab companies-tab-shared">
           <div class="section-header">
-            <h2>
-              <span
-                *ngIf="(hasSearchResults$ | async) && (searchQuery$ | async)"
-              >
-                Résultats pour "{{ searchQuery$ | async }}"
-              </span>
-              <span *ngIf="!(hasSearchResults$ | async)">
-                Entreprises à proximité
-              </span>
-            </h2>
-            <button
-              *ngIf="hasSearchResults$ | async"
-              class="btn-secondary"
-              (click)="clearSearch()"
-            >
-              Effacer
-            </button>
+            <h2>Entreprises à proximité</h2>
           </div>
 
-          <ng-container *ngIf="displayedCompanies$ | async as companies">
-            <div *ngIf="companies.length === 0" class="empty-state">
-              <i class="fas fa-store-slash empty-icon"></i>
-              <p>Aucune entreprise trouvée</p>
-              <p class="hint">
-                Essayez une autre adresse ou utilisez votre position
-              </p>
+          <div class="companies-search-bar">
+            <div class="search-input-wrapper">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Adresse, ville ou code postal..."
+                [value]="companiesSearchQuery"
+                (input)="onCompaniesSearchInput($event)"
+                (blur)="clearCompaniesSuggestions()"
+                (keydown.enter)="onCompaniesSearchEnter()"
+                autocomplete="off"
+              />
+              <button
+                class="geo-btn"
+                (click)="useDashboardLocation()"
+                [disabled]="geolocationLoading()"
+                title="Utiliser ma position"
+              >
+                <i class="fas fa-location-crosshairs" *ngIf="!geolocationLoading()"></i>
+                <span *ngIf="geolocationLoading()">...</span>
+              </button>
             </div>
 
-            <div class="companies-grid" *ngIf="companies.length > 0">
-              <div *ngFor="let company of companies" class="company-card">
-                <div class="company-card-header">
-                  <div class="company-logo">
-                    <div class="logo-placeholder">
-                      {{ company.name.charAt(0) }}
-                    </div>
-                  </div>
-                  <div class="company-info">
-                    <h3>{{ company.name }}</h3>
-                    <div class="company-meta">
-                      <span class="rating">
-                        <i class="fas fa-star"></i>
-                        {{ company.rating | number : "1.1-1" }}
-                      </span>
-                      <span class="distance" *ngIf="company.distance">
-                        <i class="fas fa-map-marker-alt"></i>
-                        {{ company.distance | number : "1.1-1"}} km
-                      </span>
-                    </div>
-                  </div>
+            <div class="suggestions-dropdown" *ngIf="companiesAddressSuggestions.length > 0">
+              <button
+                class="suggestion-item"
+                *ngFor="let suggestion of companiesAddressSuggestions"
+                (mousedown)="selectCompaniesAddressSuggestion(suggestion)"
+              >
+                <i class="fas fa-location-dot"></i>
+                <div class="suggestion-text">
+                  <span class="suggestion-main">{{ suggestion.structured_formatting?.main_text || suggestion.description }}</span>
+                  <span class="suggestion-secondary">{{ suggestion.structured_formatting?.secondary_text || '' }}</span>
                 </div>
-
-                <div class="services-preview">
-                  <div class="services-tags">
-                    <span
-                      *ngFor="let service of company.services.slice(0, 3)"
-                      class="service-tag"
-                    >
-                      {{ service.name }}
-                    </span>
-                    <span *ngIf="company.services.length > 3" class="more-tag">
-                      +{{ company.services.length - 3 }} autres
-                    </span>
-                  </div>
-                </div>
-
-                <div class="company-actions">
-                  <a
-                    [routerLink]="['/company', company.id]"
-                    class="btn-view-company"
-                  >
-                    Voir détails
-                  </a>
-                  <button
-                    class="btn-primary"
-                    (click)="openBookingModal(company)"
-                  >
-                    Réserver
-                  </button>
-                </div>
-              </div>
+              </button>
             </div>
-          </ng-container>
+
+            <div class="radius-control">
+              <label>Rayon</label>
+              <select [(ngModel)]="companiesRadius" (change)="onDashboardRadiusChange()">
+                <option [value]="5">5 km</option>
+                <option [value]="10">10 km</option>
+                <option [value]="20">20 km</option>
+                <option [value]="50">50 km</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="companies-layout">
+            <div class="companies-map-pane">
+              <app-company-map
+                [companies]="(dashboardCompanies$ | async) ?? []"
+                [center]="dashboardMapCenter()"
+                [selectedCompany]="selectedDashboardCompany()"
+                [userLocation]="dashboardUserLocation()"
+                (companySelected)="onDashboardCompanySelected($event)"
+                (bookCompany)="openBookingModal($event)"
+              ></app-company-map>
+            </div>
+            <div class="companies-cards-pane">
+              <app-company-cards
+                [companies]="(dashboardCompanies$ | async) ?? []"
+                [selectedCompany]="selectedDashboardCompany()"
+                [loading]="(loading$ | async) ?? false"
+                (companySelected)="onDashboardCompanySelected($event)"
+                (bookCompany)="openBookingModal($event)"
+              ></app-company-cards>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -545,103 +536,10 @@
     </div>
   </div>
 
-  <!-- Booking Modal -->
-  <div class="modal" *ngIf="bookingCompany()">
-    <div class="modal-overlay" (click)="closeBooking()"></div>
-    <div class="modal-content">
-      <h2>Réserver avec {{ bookingCompany()!.name }}</h2>
-
-      <div class="booking-summary">
-        <div class="company-avatar">
-          <div class="avatar-placeholder">
-            {{ getInitials(bookingCompany()!.name) }}
-          </div>
-        </div>
-        <div class="company-info">
-          <h4>{{ bookingCompany()!.name }}</h4>
-          <div class="rating">
-            <i class="fas fa-star"></i>
-            {{ bookingCompany()!.rating || "4.5" }}
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <label class="form-label">Sélectionnez un service</label>
-        <select
-          class="form-select"
-          (change)="onServiceSelect($any($event.target).value)"
-        >
-          <option value="">Choisissez un service</option>
-          <option
-            *ngFor="let service of bookingCompany()!.services"
-            [value]="service.id"
-          >
-            {{ service.name }} - {{ service.price || "Sur devis" }} €
-          </option>
-        </select>
-      </div>
-
-      <div class="form-section" *ngIf="selectedService()">
-        <label class="form-label">Date et heure</label>
-        <input
-          type="datetime-local"
-          class="form-input"
-          [(ngModel)]="selectedDateTime"
-        />
-      </div>
-
-      <div class="form-section" *ngIf="selectedService()">
-        <label class="form-label">Adresse du rendez-vous</label>
-        <input
-          type="text"
-          class="form-input"
-          placeholder="Entrez l'adresse..."
-          [(ngModel)]="bookingAddress"
-        />
-      </div>
-
-      <div class="service-details" *ngIf="selectedService()">
-        <h5>{{ selectedService()!.name }}</h5>
-        <p *ngIf="selectedService()!.description">
-          {{ selectedService()!.description }}
-        </p>
-        <div class="service-price">
-          {{ selectedService()!.price || "Sur devis" }} €
-        </div>
-      </div>
-
-      <div class="info-box" *ngIf="selectedService()">
-        <i class="fas fa-info-circle"></i>
-        <p>
-          Vous recevrez une confirmation par email avec les détails du
-          rendez-vous.
-        </p>
-      </div>
-
-      <div class="modal-actions">
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="confirmBooking()"
-          [disabled]="
-            !selectedService() || !selectedDateTime || !bookingAddress
-          "
-        >
-          Confirmer la réservation
-        </button>
-        <button type="button" class="btn-secondary" (click)="closeBooking()">
-          Annuler
-        </button>
-      </div>
-
-      <div class="success-message" *ngIf="bookingSuccess()">
-        <i class="fas fa-check-circle"></i>
-        <div class="message-content">
-          <strong>Réservation confirmée !</strong>
-          <p>{{ bookingSuccess() }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-booking-modal
+    [open]="bookingModalOpen()"
+    [company]="bookingCompany()"
+    [initialAddress]="companiesSearchQuery"
+    (closed)="closeBookingModal()"
+  ></app-booking-modal>
 </div>

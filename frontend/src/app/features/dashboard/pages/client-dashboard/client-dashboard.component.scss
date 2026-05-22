@@ -1145,3 +1145,100 @@ $transition: all 0.3s ease;
     opacity: 1;
   }
 }
+.companies-tab-shared {
+  .companies-search-bar {
+    margin-bottom: 1rem;
+  }
+
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-dark);
+  }
+
+  .geo-btn {
+    border: none;
+    background: var(--bg-tab-hover);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .suggestions-dropdown {
+    margin-top: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .suggestion-item {
+    display: flex;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    cursor: pointer;
+  }
+
+  .radius-control {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    select {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.35rem 0.5rem;
+      background: var(--white);
+      color: var(--text-dark);
+    }
+  }
+
+  .companies-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1rem;
+
+    .companies-map-pane {
+      min-height: 520px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .companies-cards-pane {
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .companies-tab-shared .companies-layout {
+    grid-template-columns: 1fr;
+
+    .companies-map-pane,
+    .companies-cards-pane {
+      max-height: none;
+      min-height: 360px;
+    }
+  }
+}

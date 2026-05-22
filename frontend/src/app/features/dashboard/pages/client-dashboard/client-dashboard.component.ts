@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { map } from 'rxjs/operators';
@@ -11,14 +11,22 @@ import {
   Validators,
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subject, Subscription, debounceTime, takeUntil } from 'rxjs';
 
 import { NearbyCompany } from '../../../client/models/client.model';
 import * as ClientSelectors from '../../../client/state/client.selectors';
 import * as ClientActions from '../../../client/state/client.actions';
-import * as BookingActions from '../../../booking/state/booking.actions';
 
-import { Booking, CreateBookingRequest } from '../../../booking/models/booking.model';
+import { Booking } from '../../../booking/models/booking.model';
+import { Company } from '../../../companies/models/company.model';
+import {
+  AddressSuggestion,
+  LatLng,
+  NearbyCompaniesService,
+} from '../../../../shared/services/nearby-companies.service';
+import { CompanyMapComponent } from '../../../../shared/components/company-map/company-map.component';
+import { CompanyCardsComponent } from '../../../../shared/components/company-cards/company-cards.component';
+import { BookingModalComponent } from '../../../../shared/components/booking-modal/booking-modal.component';
 
 type TabType = 'overview' | 'reservations' | 'companies' | 'history';
 
@@ -28,23 +36,23 @@ interface DashboardTab {
   icon: string;
 }
 
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-}
-
 @Component({
   selector: 'app-client-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    CompanyMapComponent,
+    CompanyCardsComponent,
+    BookingModalComponent,
+  ],
   templateUrl: './client-dashboard.component.html',
   styleUrls: ['./client-dashboard.component.scss'],
 })
 export class ClientDashboardComponent implements OnInit, OnDestroy {
-  // Observables from store
-  profile$: Observable<any | null>;
+  profile$: Observable<unknown | null>;
   reservations$: Observable<Booking[]>;
   paginatedReservations$: Observable<Booking[]>;
   nearbyCompanies$: Observable<NearbyCompany[]>;
@@ -55,22 +63,20 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   hasSearchResults$: Observable<boolean>;
   searchQuery$: Observable<string>;
 
+  dashboardCompanies$: Observable<Company[]>;
 
+  upcomingReservationsLocal$!: Observable<Booking[]>;
+  completedReservationsLocal$!: Observable<Booking[]>;
+  cancelledReservationsLocal$!: Observable<Booking[]>;
 
-  // Derived data (NO store selectors)
-upcomingReservationsLocal$!: Observable<Booking[]>;
-completedReservationsLocal$!: Observable<Booking[]>;
-cancelledReservationsLocal$!: Observable<Booking[]>;
+  dashboardStatsLocal$!: Observable<{
+    upcoming: number;
+    completed: number;
+    cancelled: number;
+    total: number;
+    totalSpent: number;
+  }>;
 
-dashboardStatsLocal$!: Observable<{
-  upcoming: number;
-  completed: number;
-  cancelled: number;
-  total: number;
-  totalSpent: number;
-}>;
-
-  // Local state
   tabs: DashboardTab[] = [
     { id: 'overview', label: "Vue d'ensemble", icon: 'fas fa-home' },
     { id: 'reservations', label: 'Mes Réservations', icon: 'fas fa-calendar-check' },
@@ -78,24 +84,35 @@ dashboardStatsLocal$!: Observable<{
     { id: 'history', label: 'Historique', icon: 'fas fa-history' },
   ];
 
-  currentClient: any | null = null;
-  selectedDateTime: string = '';
-  bookingAddress: string = '';
+  currentClient: { id: string } | null = null;
 
-  // Forms
   searchForm: FormGroup;
   reviewForm: FormGroup;
 
-  // Modals state
   isReviewModalOpen = false;
   isCancelModalOpen = false;
   selectedReservation: Booking | null = null;
 
-  // Subscriptions
-  private subscriptions = new Subscription();
+  bookingModalOpen = signal<boolean>(false);
+  bookingCompany = signal<Company | null>(null);
+  selectedDashboardCompany = signal<Company | null>(null);
+  dashboardMapCenter = signal<LatLng>({ lat: 45.764, lng: 4.8357 });
+  dashboardUserLocation = signal<LatLng | null>(null);
+  geolocationLoading = signal<boolean>(false);
 
-  constructor(private store: Store, private fb: FormBuilder) {
-    // Initialize forms
+  companiesSearchQuery = '';
+  companiesAddressSuggestions: AddressSuggestion[] = [];
+  companiesRadius = 10;
+
+  private subscriptions = new Subscription();
+  private destroy$ = new Subject<void>();
+  private dashboardSearchSubject = new Subject<string>();
+
+  constructor(
+    private store: Store,
+    private fb: FormBuilder,
+    private nearbyService: NearbyCompaniesService,
+  ) {
     this.searchForm = this.fb.group({
       address: ['', Validators.required],
     });
@@ -105,169 +122,173 @@ dashboardStatsLocal$!: Observable<{
       review: ['', Validators.maxLength(500)],
     });
 
-    // Select data from store
     this.profile$ = this.store.select(ClientSelectors.selectClientProfile);
     this.reservations$ = this.store.select(ClientSelectors.selectReservations);
- 
-
-
-    this.paginatedReservations$ = this.store.select(
-      ClientSelectors.selectPaginatedReservations
-    );
-    this.nearbyCompanies$ = this.store.select(
-      ClientSelectors.selectNearbyCompanies
-    );
-    this.displayedCompanies$ = this.store.select(
-      ClientSelectors.selectDisplayedCompanies
-    );
-
+    this.paginatedReservations$ = this.store.select(ClientSelectors.selectPaginatedReservations);
+    this.nearbyCompanies$ = this.store.select(ClientSelectors.selectNearbyCompanies);
+    this.displayedCompanies$ = this.store.select(ClientSelectors.selectDisplayedCompanies);
     this.loading$ = this.store.select(ClientSelectors.selectClientLoading);
     this.activeTab$ = this.store.select(ClientSelectors.selectActiveTab);
-    this.reservationFilter$ = this.store.select(
-      ClientSelectors.selectReservationFilter
-    );
-    this.hasSearchResults$ = this.store.select(
-      ClientSelectors.selectHasSearchResults
-    );
+    this.reservationFilter$ = this.store.select(ClientSelectors.selectReservationFilter);
+    this.hasSearchResults$ = this.store.select(ClientSelectors.selectHasSearchResults);
     this.searchQuery$ = this.store.select(ClientSelectors.selectSearchQuery);
+
+    this.dashboardCompanies$ = this.displayedCompanies$.pipe(
+      map((companies) => companies.map((company) => this.toCompanyModel(company))),
+    );
   }
 
   ngOnInit(): void {
-    // Load initial data
     this.store.dispatch(ClientActions.loadClientProfile());
-    this.getUserLocation();
 
-    // Load client reservations
+    this.setupCompaniesSearchAutocomplete();
+    this.loadNearbyUsingUserGeolocation();
+
     this.subscriptions.add(
       this.profile$.subscribe((profile) => {
-        if (profile?.id) {
-          this.currentClient = profile;
-          this.store.dispatch(
-            ClientActions.loadClientReservations({ clientId: profile.id })
-          );
+        const typed = profile as { id?: string } | null;
+        if (typed?.id) {
+          this.currentClient = { id: typed.id };
+          this.store.dispatch(ClientActions.loadClientReservations({ clientId: typed.id }));
         }
-      })
+      }),
+    );
+    this.upcomingReservationsLocal$ = this.reservations$.pipe(
+      map((reservations) =>
+        reservations.filter((reservation) =>
+          reservation.status === 'PENDING' || reservation.status === 'CONFIRMED',
+        ),
+      ),
     );
 
-    // Sync search query with form
-    this.subscriptions.add(
-      this.searchQuery$.subscribe((query) => {
-        if (query) {
-          this.searchForm.patchValue({ address: query });
-        }
-      })
+    this.completedReservationsLocal$ = this.reservations$.pipe(
+      map((reservations) => reservations.filter((reservation) => reservation.status === 'COMPLETED')),
     );
 
+    this.cancelledReservationsLocal$ = this.reservations$.pipe(
+      map((reservations) => reservations.filter((reservation) => reservation.status === 'CANCELLED')),
+    );
 
-     //  UPCOMING
-  this.upcomingReservationsLocal$ = this.reservations$.pipe(
-    map(reservations =>
-      reservations.filter(r =>
-        r.status === 'PENDING' || r.status === 'CONFIRMED'
-      )
-    )
-  );
+    this.dashboardStatsLocal$ = this.reservations$.pipe(
+      map((reservations) => {
+        const upcoming = reservations.filter(
+          (reservation) => reservation.status === 'PENDING' || reservation.status === 'CONFIRMED',
+        ).length;
 
-  // COMPLETED
-  this.completedReservationsLocal$ = this.reservations$.pipe(
-    map(reservations =>
-      reservations.filter(r => r.status === 'COMPLETED')
-    )
-  );
+        const completed = reservations.filter((reservation) => reservation.status === 'COMPLETED').length;
+        const cancelled = reservations.filter((reservation) => reservation.status === 'CANCELLED').length;
 
-  // CANCELLED (optional)
-  this.cancelledReservationsLocal$ = this.reservations$.pipe(
-    map(reservations =>
-      reservations.filter(r => r.status === 'CANCELLED')
-    )
-  );
+        const totalSpent = reservations
+          .filter((reservation) => reservation.status === 'COMPLETED')
+          .reduce((sum, reservation) => sum + (reservation.price || 0), 0);
 
-  // DASHBOARD STATS
-  this.dashboardStatsLocal$ = this.reservations$.pipe(
-    map(reservations => {
-      const upcoming = reservations.filter(r =>
-        r.status === 'PENDING' || r.status === 'CONFIRMED'
-      ).length;
-
-      const completed = reservations.filter(r =>
-        r.status === 'COMPLETED'
-      ).length;
-
-      const cancelled = reservations.filter(r =>
-        r.status === 'CANCELLED'
-      ).length;
-
-      const totalSpent = reservations
-        .filter(r => r.status === 'COMPLETED')
-        .reduce((sum, r) => sum + (r.price || 0), 0);
-
-      return {
-        upcoming,
-        completed,
-        cancelled,
-        total: reservations.length,
-        totalSpent,
-      };
-    })
-  );
+        return {
+          upcoming,
+          completed,
+          cancelled,
+          total: reservations.length,
+          totalSpent,
+        };
+      }),
+    );
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.subscriptions.unsubscribe();
   }
 
-  // UI Actions
   setActiveTab(tab: TabType): void {
     this.store.dispatch(ClientActions.setActiveTab({ tab }));
   }
 
   setReservationFilter(
-    filter: 'all' | 'upcoming' | 'completed' | 'cancelled'
+    filter: 'all' | 'upcoming' | 'completed' | 'cancelled',
   ): void {
     this.store.dispatch(ClientActions.setReservationFilter({ filter }));
   }
 
-  // Location and Search
-  private getUserLocation(): void {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.store.dispatch(
-            ClientActions.loadNearbyCompanies({
-              location: {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-              },
-            })
-          );
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-        }
-      );
-    }
-  }
-
   onSearchAddress(): void {
-    if (this.searchForm.valid) {
-      const address = this.searchForm.get('address')?.value;
-      this.store.dispatch(ClientActions.searchCompanies({ query: address }));
-      this.setActiveTab('companies');
-    }
+    if (!this.searchForm.valid) return;
+
+    const address = this.searchForm.get('address')?.value as string;
+    this.companiesSearchQuery = address;
+    this.searchFromAddress(address);
+    this.setActiveTab('companies');
   }
 
   useCurrentLocation(): void {
-    this.getUserLocation();
+    this.loadNearbyUsingUserGeolocation();
     this.searchForm.patchValue({ address: 'Ma position actuelle' });
     this.setActiveTab('companies');
   }
 
   clearSearch(): void {
+    this.companiesSearchQuery = '';
+    this.companiesAddressSuggestions = [];
     this.store.dispatch(ClientActions.clearSearchResults());
     this.searchForm.reset();
   }
 
-  // Reservation Actions
+  onCompaniesSearchInput(event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    this.companiesSearchQuery = query;
+    this.dashboardSearchSubject.next(query);
+  }
+
+  async selectCompaniesAddressSuggestion(suggestion: AddressSuggestion): Promise<void> {
+    this.companiesAddressSuggestions = [];
+    const place = await this.nearbyService.getPlaceCoordinates(suggestion.place_id);
+    if (!place) return;
+
+    this.companiesSearchQuery = suggestion.description;
+    this.searchForm.patchValue({ address: suggestion.description });
+    this.dashboardMapCenter.set({ lat: place.lat, lng: place.lng });
+
+    this.loadCompaniesAt(place.lat, place.lng, this.companiesRadius);
+  }
+
+  onCompaniesSearchEnter(): void {
+    if (this.companiesAddressSuggestions.length > 0) {
+      this.selectCompaniesAddressSuggestion(this.companiesAddressSuggestions[0]);
+      return;
+    }
+
+    if (this.companiesSearchQuery.trim().length > 0) {
+      this.searchFromAddress(this.companiesSearchQuery.trim());
+    }
+  }
+
+  clearCompaniesSuggestions(): void {
+    setTimeout(() => {
+      this.companiesAddressSuggestions = [];
+    }, 200);
+  }
+
+  async useDashboardLocation(): Promise<void> {
+    await this.loadNearbyUsingUserGeolocation();
+  }
+
+  onDashboardRadiusChange(): void {
+    const center = this.dashboardMapCenter();
+    this.loadCompaniesAt(center.lat, center.lng, this.companiesRadius);
+  }
+
+  onDashboardCompanySelected(company: Company): void {
+    this.selectedDashboardCompany.set(company);
+  }
+
+  openBookingModal(company: Company): void {
+    this.bookingCompany.set(company);
+    this.bookingModalOpen.set(true);
+  }
+
+  closeBookingModal(): void {
+    this.bookingCompany.set(null);
+    this.bookingModalOpen.set(false);
+  }
+
   openReviewModal(reservation: Booking): void {
     this.selectedReservation = reservation;
     this.reviewForm.patchValue({
@@ -291,7 +312,7 @@ dashboardStatsLocal$!: Observable<{
           reservationId: this.selectedReservation.id,
           rating,
           review,
-        })
+        }),
       );
       this.closeReviewModal();
     }
@@ -308,18 +329,17 @@ dashboardStatsLocal$!: Observable<{
   }
 
   cancelReservation(): void {
-    if (this.selectedReservation) {
-      this.store.dispatch(
-        ClientActions.updateReservationStatus({
-          reservationId: this.selectedReservation.id,
-          status: 'CANCELLED',
-        })
-      );
-      this.closeCancelModal();
-    }
+    if (!this.selectedReservation) return;
+
+    this.store.dispatch(
+      ClientActions.updateReservationStatus({
+        reservationId: this.selectedReservation.id,
+        status: 'CANCELLED',
+      }),
+    );
+    this.closeCancelModal();
   }
 
-  // Utility Methods
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       PENDING: 'En attente',
@@ -331,80 +351,117 @@ dashboardStatsLocal$!: Observable<{
     return labels[status] || status;
   }
 
-  formatCurrency(amount: number = 0): string {
+  formatCurrency(amount = 0): string {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
   }
 
-  // Signals for booking modal
-  bookingCompany = signal<NearbyCompany | null>(null);
-  selectedService = signal<Service | null>(null);
-  bookingSuccess = signal<string | null>(null);
-
-  // Method to open booking modal
-  openBookingModal(company: NearbyCompany): void {
-    this.bookingCompany.set(company);
-    this.selectedService.set(null);
-    this.selectedDateTime = '';
-    this.bookingAddress = '';
-    this.bookingSuccess.set(null);
+  private setupCompaniesSearchAutocomplete(): void {
+    this.dashboardSearchSubject
+      .pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe((query) => {
+        this.nearbyService
+          .getAutocompleteSuggestions(query)
+          .then((suggestions) => {
+            this.companiesAddressSuggestions = suggestions;
+          })
+          .catch(() => {
+            this.companiesAddressSuggestions = [];
+          });
+      });
   }
 
-  // Method to handle service selection in modal
-  onServiceSelect(serviceId: string): void {
-    const company = this.bookingCompany();
-    if (company) {
-      const service = company.services.find((s) => s.id === serviceId);
-      this.selectedService.set(service || null);
+  private async loadNearbyUsingUserGeolocation(): Promise<void> {
+    this.geolocationLoading.set(true);
+
+    try {
+      const location = await this.nearbyService.getUserLocation();
+      this.dashboardMapCenter.set(location);
+      this.dashboardUserLocation.set(location);
+      this.loadCompaniesAt(location.lat, location.lng, this.companiesRadius);
+
+      const address = await this.nearbyService.reverseGeocode(location.lat, location.lng);
+      if (address) {
+        this.searchForm.patchValue({ address });
+        this.companiesSearchQuery = address;
+      }
+    } catch {
+      const fallback = this.nearbyService.defaultCenter;
+      this.dashboardMapCenter.set(fallback);
+      this.loadCompaniesAt(fallback.lat, fallback.lng, this.companiesRadius);
+    } finally {
+      this.geolocationLoading.set(false);
     }
   }
 
-  // Method to close booking modal
-  closeBooking(): void {
-    this.bookingCompany.set(null);
-    this.selectedService.set(null);
-    this.bookingSuccess.set(null);
-  }
-
-  getInitials(companyName: string): string {
-    if (!companyName) return 'N';
-    return companyName
-      .split(' ')
-      .map((word) => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  }
-
-  // Method to confirm booking
-  confirmBooking() {
-    if (!this.currentClient || !this.selectedService() || !this.bookingCompany()) {
-      console.error('Missing booking data');
-      return;
-    }
-
-    const bookingRequest: CreateBookingRequest = {
-      clientId: this.currentClient.id,
-      serviceId: this.selectedService()!.id,
-      startTime: this.selectedDateTime,
-      address: this.bookingAddress,
-    };
-
-    this.store.dispatch(
-      BookingActions.createBooking({
-        companyId: this.bookingCompany()!.id,
-        booking: bookingRequest,
+  private searchFromAddress(address: string): void {
+    this.nearbyService
+      .getAutocompleteSuggestions(address)
+      .then((suggestions) => {
+        if (suggestions.length === 0) return;
+        this.selectCompaniesAddressSuggestion(suggestions[0]);
       })
-    );
+      .catch(() => {
+        // no-op
+      });
+  }
 
-    // Show success message
-    this.bookingSuccess.set('Votre réservation a été confirmée !');
+  private loadCompaniesAt(lat: number, lng: number, radiusKm: number): void {
+    this.nearbyService.loadNearbyCompanies(lat, lng, radiusKm).subscribe({
+      next: (companies) => {
+        const nearbyCompanies = companies.map((company) => this.toNearbyCompany(company));
+        this.store.dispatch(ClientActions.loadNearbyCompaniesSuccess({ companies: nearbyCompanies }));
+      },
+      error: () => {
+        this.store.dispatch(ClientActions.loadNearbyCompaniesFailure({ error: 'Unable to load companies' }));
+      },
+    });
+  }
 
-    // Close modal after 3 seconds
-    setTimeout(() => {
-      this.closeBooking();
-    }, 3000);
+  private toNearbyCompany(company: Company): NearbyCompany {
+    return {
+      id: company.id,
+      name: company.name,
+      logoUrl: company.logoUrl,
+      address: company.address ?? '',
+      distance: company.distance ?? 0,
+      rating: company.rating ?? 0,
+      isFavorite: false,
+      services: (company.services ?? []).map((service) => ({
+        id: service.id ?? '',
+        name: service.name,
+        description: service.description,
+        basePrice: service.basePrice,
+        durationInMinutes: service.durationInMinutes,
+      })),
+      latitude: company.latitude,
+      longitude: company.longitude,
+      reviewsCount: company.reviewsCount,
+      isAvailableNow: company.isAvailableNow,
+    };
+  }
+
+  private toCompanyModel(company: NearbyCompany): Company {
+    return {
+      id: company.id,
+      name: company.name,
+      logoUrl: company.logoUrl,
+      address: company.address,
+      distance: company.distance,
+      rating: company.rating,
+      services: (company.services ?? []).map((service) => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        basePrice: service.basePrice ?? service.price,
+        durationInMinutes: service.durationInMinutes ?? service.duration,
+      })),
+      latitude: company.latitude,
+      longitude: company.longitude,
+      reviewsCount: company.reviewsCount,
+      isAvailableNow: company.isAvailableNow,
+    };
   }
 }
