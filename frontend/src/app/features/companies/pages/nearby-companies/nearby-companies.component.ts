@@ -53,19 +53,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   currentCompanies: Company[] = [];
   addressSuggestions: AddressSuggestion[] = [];
 
-  get sortedCompanies(): Company[] {
-    const list = [...this.currentCompanies];
-    switch (this.sortBy) {
-      case 'rating':
-        return list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-      case 'available':
-        return list.sort(
-          (a, b) => Number(b.isAvailableNow !== false) - Number(a.isAvailableNow !== false),
-        );
-      default:
-        return list.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
-    }
-  }
+sortedCompanies: Company[] = [];
 
   ngOnInit(): void {
     console.log('[NearbyCompanies] init');
@@ -134,9 +122,10 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
     this.loadCompaniesAround(center.lat, center.lng, this.currentRadius);
   }
 
-  setSortBy(mode: SortMode): void {
-    this.sortBy = mode;
-  }
+setSortBy(mode: SortMode): void {
+  this.sortBy = mode;
+  this.updateSortedCompanies();
+}
 
   clearFilter(): void {
     this.activeFilter = null;
@@ -182,7 +171,33 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   formatDistance(meters: number | undefined): string {
     return this.nearbyService.formatDistance(meters);
   }
+private updateSortedCompanies(): void {
+  const list = [...this.currentCompanies];
 
+  switch (this.sortBy) {
+    case 'rating':
+      list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      break;
+
+    case 'available':
+      list.sort(
+        (a, b) =>
+          Number(b.isAvailableNow !== false) -
+          Number(a.isAvailableNow !== false),
+      );
+      break;
+
+    default:
+      list.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+  }
+
+  this.sortedCompanies = list;
+
+  console.log(
+    '[NearbyCompanies] sortedCompanies updated',
+    this.sortedCompanies.length,
+  );
+}
   private setupSearchSubscription(): void {
     this.searchSubject
       .pipe(debounceTime(300), takeUntil(this.destroy$))
@@ -202,7 +217,6 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
     this.nearbyService
       .getUserLocation()
       .then(async (location) => {
-        console.log('[NearbyCompanies] geolocation success', location);
         this.userLocation.set(location);
         this.mapCenter.set(location);
         this.loadCompaniesAround(location.lat, location.lng, this.currentRadius);
@@ -212,14 +226,12 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
       })
       .catch(() => {
         const fallback = this.nearbyService.defaultCenter;
-        console.log('[NearbyCompanies] geolocation failed, using fallback', fallback);
         this.mapCenter.set(fallback);
         this.loadCompaniesAround(fallback.lat, fallback.lng, this.currentRadius);
       });
   }
 
   private loadCompaniesAround(lat: number, lng: number, radiusKm: number): void {
-    console.log('[NearbyCompanies] loadCompaniesAround', { lat, lng, radiusKm });
     this.loading.set(true);
 
     this.nearbyService
@@ -227,27 +239,40 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (companies) => {
-          console.log('[NearbyCompanies] API companies loaded', companies.length);
-          this.currentCompanies = companies
-            .filter(
-              (company) =>
-                (company.latitude !== undefined && company.longitude !== undefined) ||
-                ((company as Company & { lat?: number; lng?: number }).lat !== undefined &&
-                  (company as Company & { lat?: number; lng?: number }).lng !== undefined),
-            )
-            .map((company) => {
-              const coords = company as Company & { lat?: number; lng?: number };
-              if (company.latitude !== undefined && company.longitude !== undefined) return company;
-              return {
-                ...company,
-                latitude: coords.lat,
-                longitude: coords.lng,
-              };
-            })
-            .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+         this.currentCompanies = companies
+  .filter(
+    (company) =>
+      (company.latitude !== undefined &&
+        company.longitude !== undefined) ||
+      (
+        (company as Company & { lat?: number; lng?: number }).lat !==
+          undefined &&
+        (company as Company & { lat?: number; lng?: number }).lng !==
+          undefined
+      ),
+  )
+  .map((company) => {
+    const coords = company as Company & {
+      lat?: number;
+      lng?: number;
+    };
 
-          console.log('[NearbyCompanies] companies after mapping', this.currentCompanies.length);
-          console.log('[NearbyCompanies] sortedCompanies length', this.sortedCompanies.length);
+    if (
+      company.latitude !== undefined &&
+      company.longitude !== undefined
+    ) {
+      return company;
+    }
+
+    return {
+      ...company,
+      latitude: coords.lat,
+      longitude: coords.lng,
+    };
+  });
+
+this.updateSortedCompanies();
+
           if (this.selectedCompany()) {
             const stillPresent = this.currentCompanies.find((company) => company.id === this.selectedCompany()?.id);
             if (!stillPresent) this.selectedCompany.set(null);
