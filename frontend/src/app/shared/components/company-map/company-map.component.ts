@@ -47,6 +47,7 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
   private initInterval: ReturnType<typeof setInterval> | null = null;
 
   ngAfterViewInit(): void {
+    console.log('[CompanyMap] ngAfterViewInit: starting map init');
     this.initMap();
   }
 
@@ -58,6 +59,10 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
 
     if (changes['companies'] || changes['selectedCompany']) {
+      console.log('[CompanyMap] ngOnChanges: rerender markers', {
+        companies: this.companies.length,
+        selectedCompanyId: this.selectedCompany?.id ?? null,
+      });
       this.renderMarkers();
     }
 
@@ -81,6 +86,18 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
         return;
       }
 
+      const mapElement = this.mapContainer.nativeElement;
+      const height = mapElement.getBoundingClientRect().height;
+      if (height <= 0) {
+        console.warn('[CompanyMap] map container height is 0, waiting...');
+        return;
+      }
+
+      console.log('[CompanyMap] initializing map', {
+        center: this.center,
+        companies: this.companies.length,
+        containerHeight: height,
+      });
       this.map = this.nearbyService.createMap(this.mapContainer.nativeElement, this.center);
       this.clusterer = this.nearbyService.createClusterer(this.map);
       this.renderUserLocationMarker();
@@ -88,10 +105,6 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
 
       if (this.initInterval) clearInterval(this.initInterval);
     }, 100);
-
-    setTimeout(() => {
-      if (this.initInterval) clearInterval(this.initInterval);
-    }, 8000);
   }
 
   private renderUserLocationMarker(): void {
@@ -132,6 +145,7 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
       marker.addListener('click', () => {
         this.closeInfoWindows();
         infoWindow.open(this.map, marker);
+        console.log('[CompanyMap] marker click companySelected', company.id);
         this.companySelected.emit(company);
       });
 
@@ -139,7 +153,10 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
         const bookButton = document.getElementById(`book-${actionId}`);
         const detailButton = document.getElementById(`detail-${actionId}`);
 
-        bookButton?.addEventListener('click', () => this.bookCompany.emit(company));
+        bookButton?.addEventListener('click', () => {
+          console.log('[CompanyMap] infoWindow bookCompany', company.id);
+          this.bookCompany.emit(company);
+        });
         detailButton?.addEventListener('click', () => {
           window.location.href = `/company/${company.id}`;
         });
@@ -149,6 +166,11 @@ export class CompanyMapComponent implements AfterViewInit, OnChanges, OnDestroy 
       this.infoWindows.set(company.id, infoWindow);
       nextMarkers.push(marker);
     }
+
+    console.log('[CompanyMap] markers rendered', {
+      requestedCompanies: this.companies.length,
+      renderedMarkers: nextMarkers.length,
+    });
 
     if (nextMarkers.length) {
       this.clusterer?.addMarkers(nextMarkers);

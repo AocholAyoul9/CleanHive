@@ -20,7 +20,7 @@
     *ngFor="let company of companies; trackBy: trackByCompanyId"
     class="card"
     [class.active]="selectedCompany?.id === company.id"
-    (click)="companySelected.emit(company)"
+    (click)="onSelectCompany(company)"
   >
     <div class="availability-badge" [class.available]="company.isAvailableNow !== false">
       <span class="dot"></span>
@@ -59,7 +59,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn-primary" (click)="bookCompany.emit(company); $event.stopPropagation()" [disabled]="company.isAvailableNow === false">
+      <button class="btn-primary" (click)="onBookCompany(company); $event.stopPropagation()" [disabled]="company.isAvailableNow === false">
         <i class="fas fa-calendar-check"></i> Réserver
       </button>
       <button class="btn-secondary" [routerLink]="['/company', company.id]" (click)="$event.stopPropagation()">

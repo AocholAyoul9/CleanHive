@@ -68,6 +68,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('[NearbyCompanies] init');
     this.setupSearchSubscription();
     this.loadInitialCompanies();
   }
@@ -142,6 +143,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   }
 
   selectCompany(company: Company): void {
+    console.log('[NearbyCompanies] selectCompany', company.id);
     this.selectedCompany.set(company);
   }
 
@@ -158,13 +160,19 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   }
 
   bookCompany(company: Company): void {
+    console.log('[NearbyCompanies] open booking modal', company.id);
     this.bookingCompany.set(company);
     this.bookingModalOpen.set(true);
+    console.log('[NearbyCompanies] modal state', {
+      open: this.bookingModalOpen(),
+      bookingCompanyId: this.bookingCompany()?.id ?? null,
+    });
   }
 
   closeBookingModal(): void {
     this.bookingModalOpen.set(false);
     this.bookingCompany.set(null);
+    console.log('[NearbyCompanies] close booking modal');
   }
 
   trackByCompanyId(_: number, company: Company): string {
@@ -194,6 +202,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
     this.nearbyService
       .getUserLocation()
       .then(async (location) => {
+        console.log('[NearbyCompanies] geolocation success', location);
         this.userLocation.set(location);
         this.mapCenter.set(location);
         this.loadCompaniesAround(location.lat, location.lng, this.currentRadius);
@@ -203,12 +212,14 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
       })
       .catch(() => {
         const fallback = this.nearbyService.defaultCenter;
+        console.log('[NearbyCompanies] geolocation failed, using fallback', fallback);
         this.mapCenter.set(fallback);
         this.loadCompaniesAround(fallback.lat, fallback.lng, this.currentRadius);
       });
   }
 
   private loadCompaniesAround(lat: number, lng: number, radiusKm: number): void {
+    console.log('[NearbyCompanies] loadCompaniesAround', { lat, lng, radiusKm });
     this.loading.set(true);
 
     this.nearbyService
@@ -216,10 +227,26 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (companies) => {
+          console.log('[NearbyCompanies] API companies loaded', companies.length);
           this.currentCompanies = companies
-            .filter((company) => company.latitude !== undefined && company.longitude !== undefined)
+            .filter(
+              (company) =>
+                (company.latitude !== undefined && company.longitude !== undefined) ||
+                ((company as Company & { lat?: number; lng?: number }).lat !== undefined &&
+                  (company as Company & { lat?: number; lng?: number }).lng !== undefined),
+            )
+            .map((company) => {
+              const coords = company as Company & { lat?: number; lng?: number };
+              if (company.latitude !== undefined && company.longitude !== undefined) return company;
+              return {
+                ...company,
+                latitude: coords.lat,
+                longitude: coords.lng,
+              };
+            })
             .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
 
+          console.log('[NearbyCompanies] companies after mapping', this.currentCompanies.length);
           if (this.selectedCompany()) {
             const stillPresent = this.currentCompanies.find((company) => company.id === this.selectedCompany()?.id);
             if (!stillPresent) this.selectedCompany.set(null);
@@ -228,6 +255,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
           this.loading.set(false);
         },
         error: () => {
+          console.error('[NearbyCompanies] failed loading companies');
           this.loading.set(false);
         },
       });

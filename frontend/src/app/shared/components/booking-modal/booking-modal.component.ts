@@ -64,12 +64,19 @@ export class BookingModalComponent implements OnChanges {
   todayDate = computed(() => new Date().toISOString().split('T')[0]);
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['open'] || changes['company']) {
+      console.log('[BookingModal] inputs changed', {
+        open: this.open,
+        companyId: this.company?.id ?? null,
+      });
+    }
     if ((changes['open'] || changes['company']) && this.open && this.company) {
       this.resetForm();
     }
   }
 
   closeBookingModal(): void {
+    console.log('[BookingModal] close emitted');
     this.closed.emit();
   }
 

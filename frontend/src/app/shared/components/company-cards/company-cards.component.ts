@@ -43,4 +43,14 @@ export class CompanyCardsComponent {
   trackByCompanyId(_: number, company: Company): string {
     return company.id;
   }
+
+  onSelectCompany(company: Company): void {
+    console.log('[CompanyCards] companySelected', company.id);
+    this.companySelected.emit(company);
+  }
+
+  onBookCompany(company: Company): void {
+    console.log('[CompanyCards] bookCompany', company.id);
+    this.bookCompany.emit(company);
+  }
 }
