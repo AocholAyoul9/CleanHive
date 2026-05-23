@@ -54,20 +54,19 @@ interface DashboardTab {
 export class ClientDashboardComponent implements OnInit, OnDestroy {
   profile$: Observable<ClientProfile | null>;
   reservations$: Observable<Booking[]>;
-  paginatedReservations$: Observable<Booking[]>;
   nearbyCompanies$: Observable<NearbyCompany[]>;
   displayedCompanies$: Observable<NearbyCompany[]>;
   loading$: Observable<boolean>;
   activeTab$: Observable<TabType>;
-  reservationFilter$: Observable<string>;
   hasSearchResults$: Observable<boolean>;
   searchQuery$: Observable<string>;
 
   dashboardCompanies$: Observable<Company[]>;
 
-  upcomingReservationsLocal$!: Observable<Booking[]>;
-  completedReservationsLocal$!: Observable<Booking[]>;
-  cancelledReservationsLocal$!: Observable<Booking[]>;
+  activeReservations$: Observable<Booking[]>;
+  historyReservations$: Observable<Booking[]>;
+  completedReservations$: Observable<Booking[]>;
+  cancelledReservations$: Observable<Booking[]>;
 
   dashboardStatsLocal$!: Observable<{
     upcoming: number;
@@ -124,18 +123,20 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
     this.profile$ = this.store.select(ClientSelectors.selectClientProfile);
     this.reservations$ = this.store.select(ClientSelectors.selectReservations);
-    this.paginatedReservations$ = this.store.select(ClientSelectors.selectPaginatedReservations);
     this.nearbyCompanies$ = this.store.select(ClientSelectors.selectNearbyCompanies);
     this.displayedCompanies$ = this.store.select(ClientSelectors.selectDisplayedCompanies);
     this.loading$ = this.store.select(ClientSelectors.selectClientLoading);
     this.activeTab$ = this.store.select(ClientSelectors.selectActiveTab);
-    this.reservationFilter$ = this.store.select(ClientSelectors.selectReservationFilter);
     this.hasSearchResults$ = this.store.select(ClientSelectors.selectHasSearchResults);
     this.searchQuery$ = this.store.select(ClientSelectors.selectSearchQuery);
 
     this.dashboardCompanies$ = this.displayedCompanies$.pipe(
       map((companies) => companies.map((company) => this.toCompanyModel(company))),
     );
+    this.activeReservations$ = this.store.select(ClientSelectors.selectUpcomingReservations);
+    this.historyReservations$ = this.store.select(ClientSelectors.selectHistoryReservations);
+    this.completedReservations$ = this.store.select(ClientSelectors.selectCompletedReservations);
+    this.cancelledReservations$ = this.store.select(ClientSelectors.selectCancelledReservations);
   }
 
   ngOnInit(): void {
@@ -153,26 +154,10 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         }
       }),
     );
-    this.upcomingReservationsLocal$ = this.reservations$.pipe(
-      map((reservations) =>
-        reservations.filter((reservation) =>
-          reservation.status === 'PENDING' || reservation.status === 'CONFIRMED',
-        ),
-      ),
-    );
-
-    this.completedReservationsLocal$ = this.reservations$.pipe(
-      map((reservations) => reservations.filter((reservation) => reservation.status === 'COMPLETED')),
-    );
-
-    this.cancelledReservationsLocal$ = this.reservations$.pipe(
-      map((reservations) => reservations.filter((reservation) => reservation.status === 'CANCELLED')),
-    );
-
     this.dashboardStatsLocal$ = this.reservations$.pipe(
       map((reservations) => {
         const upcoming = reservations.filter(
-          (reservation) => reservation.status === 'PENDING' || reservation.status === 'CONFIRMED',
+          (reservation) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(reservation.status),
         ).length;
 
         const completed = reservations.filter((reservation) => reservation.status === 'COMPLETED').length;
@@ -356,6 +341,22 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
+  }
+
+  canCancelReservation(reservation: Booking): boolean {
+    return reservation.status === 'PENDING' || reservation.status === 'CONFIRMED';
+  }
+
+  canLeaveReview(reservation: Booking): boolean {
+    return reservation.status === 'COMPLETED';
+  }
+
+  trackByReservationId(_index: number, reservation: Booking): string {
+    return reservation.id;
+  }
+
+  getStatusClass(status: string): string {
+    return status.toLowerCase();
   }
 
   private setupCompaniesSearchAutocomplete(): void {

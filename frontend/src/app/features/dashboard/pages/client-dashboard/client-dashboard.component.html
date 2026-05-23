@@ -51,7 +51,6 @@
   </header>
 
   <main class="dashboard-main">
-    <!-- Simplified Tab Navigation -->
     <nav class="dashboard-tabs">
       <button
         *ngFor="let tab of tabs"
@@ -64,200 +63,134 @@
       </button>
     </nav>
 
-    <div *ngIf="loading$ | async" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Chargement...</p>
-    </div>
-
-    <ng-container *ngIf="!(loading$ | async)">
-      <!-- Overview Tab - Cleaned -->
-      <div *ngIf="(activeTab$ | async) === 'overview'" class="tab-content">
-        <div class="overview-tab">
-          <!-- Stats Cards - Clean Layout -->
-          <div class="stats-grid" *ngIf="dashboardStatsLocal$  | async as stats">
-            <div class="stat-card upcoming" >
-              <div class="stat-content">
-                <i class="fas fa-clock stat-icon"></i>
-                <div class="stat-details">
-                  <h3>{{ stats.upcoming }}</h3>
-                  <p>À venir</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="stat-card completed">
-              <div class="stat-content">
-                <i class="fas fa-check-circle stat-icon"></i>
-                <div class="stat-details">
-                  <h3>{{ stats.completed }}</h3>
-                  <p>Terminées</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="stat-card total">
-              <div class="stat-content">
-                <i class="fas fa-calendar-alt stat-icon"></i>
-                <div class="stat-details">
-                  <h3>{{ stats.total }}</h3>
-                  <p>Total</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="stat-card revenue">
-              <div class="stat-content">
-               <!----<i class="fas fa-euro-sign stat-icon"></i>-->
-                <div class="stat-details">
-                  <h3>{{ formatCurrency(stats.totalSpent) }}</h3>
-                  <p>Dépensé</p>
-                </div>
+    <div *ngIf="(activeTab$ | async) === 'overview'" class="tab-content">
+      <div class="overview-tab">
+        <div class="stats-grid" *ngIf="dashboardStatsLocal$ | async as stats">
+          <div class="stat-card upcoming">
+            <div class="stat-content">
+              <i class="fas fa-clock stat-icon"></i>
+              <div class="stat-details">
+                <h3>{{ stats.upcoming }}</h3>
+                <p>À venir</p>
               </div>
             </div>
           </div>
 
-          <!-- Upcoming Bookings - Simplified -->
-          <div class="card upcoming-bookings">
-            <div class="section-header">
-              <h3>
-                <i class="fas fa-calendar-day"></i> Prochaines réservations
-              </h3>
+          <div class="stat-card completed">
+            <div class="stat-content">
+              <i class="fas fa-check-circle stat-icon"></i>
+              <div class="stat-details">
+                <h3>{{ stats.completed }}</h3>
+                <p>Terminées</p>
+              </div>
             </div>
+          </div>
 
-            <ng-container
-              *ngIf="upcomingReservationsLocal$ | async as upcomingReservations"
-            >
-              <div
-                *ngIf="upcomingReservations.length === 0"
-                class="empty-state"
-              >
-                <i class="fas fa-calendar-plus empty-icon"></i>
-                <p>Aucune réservation prévue</p>
-                <button class="btn-primary" (click)="setActiveTab('companies')">
-                  Réserver maintenant
-                </button>
+          <div class="stat-card total">
+            <div class="stat-content">
+              <i class="fas fa-calendar-alt stat-icon"></i>
+              <div class="stat-details">
+                <h3>{{ stats.total }}</h3>
+                <p>Total</p>
               </div>
+            </div>
+          </div>
 
-              <div
-                class="bookings-list"
-                *ngIf="upcomingReservations.length > 0"
-              >
-                <div
-                  *ngFor="let reservation of upcomingReservations.slice(0, 3)"
-                  class="booking-item"
-                  [class]="reservation.status.toLowerCase()"
-                >
-                  <div class="booking-summary">
-                    <div class="company-info">
-                      <div class="company-avatar">
-                        <div class="avatar-placeholder">
-                          {{ reservation.companyName.charAt(0) }}
-                        </div>
-                      </div>
-                      <div>
-                        <h4>{{ reservation.companyName }}</h4>
-                        <div class="booking-meta">
-                          <span
-                            ><i class="fas fa-calendar"></i>
-                            {{ reservation.startTime | date : "dd/MM" }}</span
-                          >
-                          <span
-                            ><i class="fas fa-clock"></i>
-                            {{ reservation.startTime | date : "HH:mm" }}</span
-                          >
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="booking-status">
-                      <span
-                        class="status-badge"
-                        [class]="reservation.status.toLowerCase()"
-                      >
-                        {{ getStatusLabel(reservation.status) }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="booking-details">
-                    <p class="service-name">Service {{ reservation.serviceName }}</p>
-                    <div class="booking-actions">
-                      <button
-                        class="btn-secondary btn-sm"
-                        *ngIf="
-                          reservation.status === 'PENDING' ||
-                          reservation.status === 'CONFIRMED'
-                        "
-                        (click)="openCancelModal(reservation)"
-                      >
-                        Annuler
-                      </button>
-                      <a
-                        class="btn-primary btn-sm"
-                        [routerLink]="['/company', reservation.companyId]"
-                      >
-                        Voir l'entreprise
-                      </a>
-                    </div>
-                  </div>
-                </div>
+          <div class="stat-card revenue">
+            <div class="stat-content">
+              <div class="stat-details">
+                <h3>{{ formatCurrency(stats.totalSpent) }}</h3>
+                <p>Dépensé</p>
               </div>
-            </ng-container>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Reservations Tab - Simplified -->
-      <div *ngIf="(activeTab$ | async) === 'reservations'" class="tab-content">
-        <div class="reservations-tab">
+        <div class="card upcoming-bookings">
           <div class="section-header">
-            <h2>Mes Réservations</h2>
-            <div class="filter-buttons">
-              <button
-                [class.active]="(reservationFilter$ | async) === 'all'"
-                (click)="setReservationFilter('all')"
-                class="filter-btn"
-              >
-                Toutes
-              </button>
-              <button
-                [class.active]="(reservationFilter$ | async) === 'upcoming'"
-                (click)="setReservationFilter('upcoming')"
-                class="filter-btn"
-              >
-                À venir
-              </button>
-              <button
-                [class.active]="(reservationFilter$ | async) === 'completed'"
-                (click)="setReservationFilter('completed')"
-                class="filter-btn"
-              >
-                Terminées
-              </button>
-              <button
-                [class.active]="(reservationFilter$ | async) === 'cancelled'"
-                (click)="setReservationFilter('cancelled')"
-                class="filter-btn"
-              >
-                Annulées
-              </button>
-            </div>
+            <h3>
+              <i class="fas fa-calendar-day"></i> Prochaines réservations
+            </h3>
           </div>
 
-          <ng-container *ngIf="paginatedReservations$ | async as reservations">
-            <div *ngIf="reservations.length === 0" class="empty-state">
+          <ng-container *ngIf="activeReservations$ | async as activeReservations">
+            <div *ngIf="activeReservations.length === 0" class="empty-state">
+              <i class="fas fa-calendar-plus empty-icon"></i>
+              <p>Aucune réservation prévue</p>
+              <button class="btn-primary" (click)="setActiveTab('companies')">
+                Réserver maintenant
+              </button>
+            </div>
+
+            <div class="bookings-list" *ngIf="activeReservations.length > 0">
+              <div
+                *ngFor="let reservation of activeReservations.slice(0, 3); trackBy: trackByReservationId"
+                class="booking-item"
+                [class]="getStatusClass(reservation.status)"
+              >
+                <div class="booking-summary">
+                  <div class="company-info">
+                    <div class="company-avatar">
+                      <div class="avatar-placeholder">
+                        {{ reservation.companyName.charAt(0) }}
+                      </div>
+                    </div>
+                    <div>
+                      <h4>{{ reservation.companyName }}</h4>
+                      <div class="booking-meta">
+                        <span><i class="fas fa-calendar"></i> {{ reservation.startTime | date : "dd/MM" }}</span>
+                        <span><i class="fas fa-clock"></i> {{ reservation.startTime | date : "HH:mm" }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="booking-status">
+                    <span class="status-badge" [class]="getStatusClass(reservation.status)">
+                      {{ getStatusLabel(reservation.status) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="booking-details">
+                  <p class="service-name">Service {{ reservation.serviceName }}</p>
+                  <div class="booking-actions">
+                    <button class="btn-secondary btn-sm" *ngIf="canCancelReservation(reservation)" (click)="openCancelModal(reservation)">
+                      Annuler
+                    </button>
+                    <a class="btn-primary btn-sm" [routerLink]="['/company', reservation.companyId]">
+                      Voir détails
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="(activeTab$ | async) === 'reservations'" class="tab-content">
+      <div class="reservations-tab">
+        <div class="section-header">
+          <h2>Réservations actives</h2>
+        </div>
+
+        <div class="skeleton-list" *ngIf="loading$ | async">
+          <div class="reservation-skeleton" *ngFor="let skeleton of [1,2,3]"></div>
+        </div>
+
+        <ng-container *ngIf="!(loading$ | async)">
+          <ng-container *ngIf="activeReservations$ | async as activeReservations">
+            <div *ngIf="activeReservations.length === 0" class="empty-state">
               <i class="fas fa-calendar-times empty-icon"></i>
-              <p>Aucune réservation trouvée</p>
+              <p>Aucune réservation active</p>
               <button class="btn-primary" (click)="setActiveTab('companies')">
                 Réserver un service
               </button>
             </div>
 
-            <div class="reservations-list" *ngIf="reservations.length > 0">
-              <div
-                *ngFor="let reservation of reservations"
-                class="reservation-item"
-              >
+            <div class="reservations-list" *ngIf="activeReservations.length > 0">
+              <div *ngFor="let reservation of activeReservations; trackBy: trackByReservationId" class="reservation-item">
                 <div class="reservation-header">
                   <div class="company-info">
                     <div class="company-avatar">
@@ -268,28 +201,17 @@
                     <div>
                       <h4>{{ reservation.companyName }}</h4>
                       <div class="reservation-meta">
-                        <span
-                          ><i class="fas fa-calendar"></i>
-                          {{
-                            reservation.startTime | date : "dd/MM/yyyy"
-                          }}</span
-                        >
-                        <span
-                          ><i class="fas fa-clock"></i>
-                          {{ reservation.startTime | date : "HH:mm" }}</span
-                        >
+                        <span><i class="fas fa-calendar"></i> {{ reservation.startTime | date : "dd/MM/yyyy" }}</span>
+                        <span><i class="fas fa-clock"></i> {{ reservation.startTime | date : "HH:mm" }}</span>
                       </div>
                     </div>
                   </div>
                   <div class="reservation-status">
-                    <span
-                      class="status-badge"
-                      [class]="reservation.status.toLowerCase()"
-                    >
+                    <span class="status-badge" [class]="getStatusClass(reservation.status)">
                       {{ getStatusLabel(reservation.status) }}
                     </span>
                     <span class="reservation-price">
-                      {{ formatCurrency(reservation.price) }}
+                      {{ formatCurrency(reservation.price || reservation.servicePrice) }}
                     </span>
                   </div>
                 </div>
@@ -298,167 +220,156 @@
                   <p class="service-name">{{ reservation.serviceName }}</p>
 
                   <div class="reservation-actions">
-                    <button
-                      *ngIf="
-                        reservation.status === 'COMPLETED' &&
-                        !reservation.rating
-                      "
-                      class="btn-review"
-                      (click)="openReviewModal(reservation)"
-                    >
-                      <i class="fas fa-star"></i> Noter
-                    </button>
-                    <button
-                      *ngIf="
-                        reservation.status === 'PENDING' ||
-                        reservation.status === 'CONFIRMED'
-                      "
-                      class="btn-cancel"
-                      (click)="openCancelModal(reservation)"
-                    >
+                    <button *ngIf="canCancelReservation(reservation)" class="btn-cancel" (click)="openCancelModal(reservation)">
                       Annuler
                     </button>
-                    <a
-                      [routerLink]="['/company', reservation.companyId]"
-                      class="btn-view-company"
-                    >
-                      Voir l'entreprise
+                    <a [routerLink]="['/company', reservation.companyId]" class="btn-view-company">
+                      Voir détails
                     </a>
                   </div>
                 </div>
               </div>
             </div>
           </ng-container>
-        </div>
+        </ng-container>
       </div>
+    </div>
 
-      <!-- Companies Tab  -->
-      <div *ngIf="(activeTab$ | async) === 'companies'" class="tab-content">
-        <div class="companies-tab companies-tab-shared">
-          <div class="section-header">
-            <h2>Entreprises à proximité</h2>
+    <div *ngIf="(activeTab$ | async) === 'companies'" class="tab-content">
+      <div class="companies-tab companies-tab-shared">
+        <div class="section-header">
+          <h2>Entreprises à proximité</h2>
+        </div>
+
+        <div class="companies-search-bar">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Adresse, ville ou code postal..."
+              [value]="companiesSearchQuery"
+              (input)="onCompaniesSearchInput($event)"
+              (blur)="clearCompaniesSuggestions()"
+              (keydown.enter)="onCompaniesSearchEnter()"
+              autocomplete="off"
+            />
+            <button
+              class="geo-btn"
+              (click)="useDashboardLocation()"
+              [disabled]="geolocationLoading()"
+              title="Utiliser ma position"
+            >
+              <i class="fas fa-location-crosshairs" *ngIf="!geolocationLoading()"></i>
+              <span *ngIf="geolocationLoading()">...</span>
+            </button>
           </div>
 
-          <div class="companies-search-bar">
-            <div class="search-input-wrapper">
-              <i class="fas fa-search search-icon"></i>
-              <input
-                type="text"
-                class="search-input"
-                placeholder="Adresse, ville ou code postal..."
-                [value]="companiesSearchQuery"
-                (input)="onCompaniesSearchInput($event)"
-                (blur)="clearCompaniesSuggestions()"
-                (keydown.enter)="onCompaniesSearchEnter()"
-                autocomplete="off"
-              />
-              <button
-                class="geo-btn"
-                (click)="useDashboardLocation()"
-                [disabled]="geolocationLoading()"
-                title="Utiliser ma position"
-              >
-                <i class="fas fa-location-crosshairs" *ngIf="!geolocationLoading()"></i>
-                <span *ngIf="geolocationLoading()">...</span>
-              </button>
-            </div>
-
-            <div class="suggestions-dropdown" *ngIf="companiesAddressSuggestions.length > 0">
-              <button
-                class="suggestion-item"
-                *ngFor="let suggestion of companiesAddressSuggestions"
-                (mousedown)="selectCompaniesAddressSuggestion(suggestion)"
-              >
-                <i class="fas fa-location-dot"></i>
-                <div class="suggestion-text">
-                  <span class="suggestion-main">{{ suggestion.structured_formatting?.main_text || suggestion.description }}</span>
-                  <span class="suggestion-secondary">{{ suggestion.structured_formatting?.secondary_text || '' }}</span>
-                </div>
-              </button>
-            </div>
-
-            <div class="radius-control">
-              <label>Rayon</label>
-              <select [(ngModel)]="companiesRadius" (change)="onDashboardRadiusChange()">
-                <option [value]="5">5 km</option>
-                <option [value]="10">10 km</option>
-                <option [value]="20">20 km</option>
-                <option [value]="50">50 km</option>
-              </select>
-            </div>
+          <div class="suggestions-dropdown" *ngIf="companiesAddressSuggestions.length > 0">
+            <button
+              class="suggestion-item"
+              *ngFor="let suggestion of companiesAddressSuggestions"
+              (mousedown)="selectCompaniesAddressSuggestion(suggestion)"
+            >
+              <i class="fas fa-location-dot"></i>
+              <div class="suggestion-text">
+                <span class="suggestion-main">{{ suggestion.structured_formatting?.main_text || suggestion.description }}</span>
+                <span class="suggestion-secondary">{{ suggestion.structured_formatting?.secondary_text || '' }}</span>
+              </div>
+            </button>
           </div>
 
-          <div class="companies-layout">
-            <div class="companies-map-pane">
-              <app-company-map
-                [companies]="(dashboardCompanies$ | async) ?? []"
-                [center]="dashboardMapCenter()"
-                [selectedCompany]="selectedDashboardCompany()"
-                [userLocation]="dashboardUserLocation()"
-                (companySelected)="onDashboardCompanySelected($event)"
-                (bookCompany)="openBookingModal($event)"
-              ></app-company-map>
-            </div>
-            <div class="companies-cards-pane">
-              <app-company-cards
-                [companies]="(dashboardCompanies$ | async) ?? []"
-                [selectedCompany]="selectedDashboardCompany()"
-                [loading]="(loading$ | async) ?? false"
-                (companySelected)="onDashboardCompanySelected($event)"
-                (bookCompany)="openBookingModal($event)"
-              ></app-company-cards>
-            </div>
+          <div class="radius-control">
+            <label>Rayon</label>
+            <select [(ngModel)]="companiesRadius" (change)="onDashboardRadiusChange()">
+              <option [value]="5">5 km</option>
+              <option [value]="10">10 km</option>
+              <option [value]="20">20 km</option>
+              <option [value]="50">50 km</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <!-- History Tab - Clean Timeline -->
-      <div *ngIf="(activeTab$ | async) === 'history'" class="tab-content">
-        <div class="history-tab">
-          <div class="section-header">
-            <h2><i class="fas fa-history"></i> Historique</h2>
+        <div class="companies-layout">
+          <div class="companies-map-pane">
+            <app-company-map
+              [companies]="(dashboardCompanies$ | async) ?? []"
+              [center]="dashboardMapCenter()"
+              [selectedCompany]="selectedDashboardCompany()"
+              [userLocation]="dashboardUserLocation()"
+              (companySelected)="onDashboardCompanySelected($event)"
+              (bookCompany)="openBookingModal($event)"
+            ></app-company-map>
           </div>
+          <div class="companies-cards-pane">
+            <app-company-cards
+              [companies]="(dashboardCompanies$ | async) ?? []"
+              [selectedCompany]="selectedDashboardCompany()"
+              [loading]="(loading$ | async) ?? false"
+              (companySelected)="onDashboardCompanySelected($event)"
+              (bookCompany)="openBookingModal($event)"
+            ></app-company-cards>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="history-list">
-            <ng-container *ngIf="reservations$ | async as reservations">
-              <div
-                *ngFor="let reservation of reservations"
-                class="history-item"
-              >
+    <div *ngIf="(activeTab$ | async) === 'history'" class="tab-content">
+      <div class="history-tab">
+        <div class="section-header">
+          <h2><i class="fas fa-history"></i> Historique des réservations</h2>
+        </div>
+
+        <div class="skeleton-list" *ngIf="loading$ | async">
+          <div class="reservation-skeleton" *ngFor="let skeleton of [1,2,3]"></div>
+        </div>
+
+        <ng-container *ngIf="!(loading$ | async)">
+          <ng-container *ngIf="historyReservations$ | async as historyReservations">
+            <div *ngIf="historyReservations.length === 0" class="empty-state">
+              <i class="fas fa-history empty-icon"></i>
+              <p>Aucun historique disponible</p>
+            </div>
+
+            <div class="history-list" *ngIf="historyReservations.length > 0">
+              <div *ngFor="let reservation of historyReservations; trackBy: trackByReservationId" class="history-item">
                 <div class="history-date">
-                  {{ reservation.startTime | date : "dd MMM" }}
+                  {{ reservation.startTime | date : "dd MMM yyyy" }}
                 </div>
                 <div class="history-content">
                   <div class="history-header">
                     <h4>{{ reservation.companyName }}</h4>
-                    <span
-                      class="history-status"
-                      [class]="reservation.status.toLowerCase()"
-                    >
+                    <span class="history-status" [class]="getStatusClass(reservation.status)">
                       {{ getStatusLabel(reservation.status) }}
                     </span>
                   </div>
                   <p class="history-service">{{ reservation.serviceName }}</p>
                   <div class="history-meta">
-                    <span
-                      ><i class="fas fa-clock"></i>
-                      {{ reservation.startTime | date : "HH:mm" }}</span
-                    >
-                    <span
-                      ><i class="fas fa-euro-sign"></i>
-                      {{ formatCurrency(reservation.servicePrice) }}</span
-                    >
-                    <span *ngIf="reservation.rating">
-                      <i class="fas fa-star"></i> {{ reservation.rating }}/5
+                    <span><i class="fas fa-clock"></i> {{ reservation.startTime | date : "HH:mm" }}</span>
+                    <span><i class="fas fa-euro-sign"></i> {{ formatCurrency(reservation.price || reservation.servicePrice) }}</span>
+                  </div>
+
+                  <div class="history-review" *ngIf="reservation.rating">
+                    <span class="review-stars">
+                      <i *ngFor="let star of [1, 2, 3, 4, 5]" [class]="star <= (reservation.rating || 0) ? 'fas fa-star' : 'far fa-star'"></i>
                     </span>
+                    <span class="review-score">{{ reservation.rating }}/5</span>
+                    <p *ngIf="reservation.review" class="review-text">“{{ reservation.review }}”</p>
+                  </div>
+
+                  <div class="history-actions" *ngIf="canLeaveReview(reservation)">
+                    <button type="button" class="btn-review" (click)="openReviewModal(reservation)">
+                      <i class="fas fa-star"></i>
+                      Laisser un avis
+                    </button>
                   </div>
                 </div>
               </div>
-            </ng-container>
-          </div>
-        </div>
+            </div>
+          </ng-container>
+        </ng-container>
       </div>
-    </ng-container>
+    </div>
   </main>
 
   <!-- Simplified Modals -->

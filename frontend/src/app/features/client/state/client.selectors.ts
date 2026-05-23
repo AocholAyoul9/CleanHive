@@ -5,6 +5,12 @@ import { Booking } from '../../booking/models/booking.model';
 import { NearbyCompany } from '../models/client.model';
 
 type TabType = 'overview' | 'reservations' | 'companies' | 'history';
+type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+const ACTIVE_RESERVATION_STATUSES: ReadonlyArray<ReservationStatus> = ['PENDING', 'CONFIRMED', 'IN_PROGRESS'];
+const COMPLETED_RESERVATION_STATUSES: ReadonlyArray<ReservationStatus> = ['COMPLETED'];
+const CANCELLED_RESERVATION_STATUSES: ReadonlyArray<ReservationStatus> = ['CANCELLED'];
+const HISTORY_RESERVATION_STATUSES: ReadonlyArray<ReservationStatus> = ['COMPLETED', 'CANCELLED'];
 
 
 // Feature selector
@@ -81,11 +87,34 @@ export const selectPagination = createSelector(
 export const selectUpcomingReservations = createSelector(
   selectClientReservations,
   (reservations: Booking[]) => {
-    const now = new Date();
-    return reservations
-      .filter((r: Booking) => new Date(r.startTime) >= now && r.status !== 'CANCELLED' && r.status !== 'COMPLETED')
-      .sort((a: Booking, b: Booking) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    return [...reservations]
+      .filter((reservation) => ACTIVE_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
   }
+);
+
+export const selectCompletedReservations = createSelector(
+  selectClientReservations,
+  (reservations: Booking[]) =>
+    [...reservations]
+      .filter((reservation) => COMPLETED_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+);
+
+export const selectCancelledReservations = createSelector(
+  selectClientReservations,
+  (reservations: Booking[]) =>
+    [...reservations]
+      .filter((reservation) => CANCELLED_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+);
+
+export const selectHistoryReservations = createSelector(
+  selectClientReservations,
+  (reservations: Booking[]) =>
+    [...reservations]
+      .filter((reservation) => HISTORY_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
 );
 
 export const selectRecentReservations = createSelector(
@@ -102,13 +131,19 @@ export const selectFilteredReservations = createSelector(
   (reservations: Booking[], filter: string) => {
     switch (filter) {
       case 'upcoming':
-        return reservations.filter((r: Booking) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(r.status));
+        return [...reservations]
+          .filter((reservation) => ACTIVE_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+          .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
       case 'completed':
-        return reservations.filter((r: Booking) => r.status === 'COMPLETED');
+        return [...reservations]
+          .filter((reservation) => COMPLETED_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+          .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
       case 'cancelled':
-        return reservations.filter((r: Booking) => r.status === 'CANCELLED');
+        return [...reservations]
+          .filter((reservation) => CANCELLED_RESERVATION_STATUSES.includes(reservation.status as ReservationStatus))
+          .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
       default:
-        return reservations;
+        return [...reservations].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
     }
   }
 );

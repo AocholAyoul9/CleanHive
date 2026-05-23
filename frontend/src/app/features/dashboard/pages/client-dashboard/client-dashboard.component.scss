@@ -440,6 +440,21 @@ $transition: all 0.3s ease;
 
       // Reservations Tab
       .reservations-tab {
+        .skeleton-list {
+          display: grid;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .reservation-skeleton {
+          height: 136px;
+          border-radius: $radius-lg;
+          border: 1px solid var(--border);
+          background: linear-gradient(90deg, var(--bg-tab-hover) 25%, var(--border) 50%, var(--bg-tab-hover) 75%);
+          background-size: 220% 100%;
+          animation: shimmer 1.2s ease-in-out infinite;
+        }
+
         .section-header {
           .filter-buttons {
             display: flex;
@@ -524,6 +539,10 @@ $transition: all 0.3s ease;
 
                   &.confirmed {
                     @include status-badge(var(--status-confirmed-bg), var(--status-confirmed-text), var(--status-confirmed-border));
+                  }
+
+                  &.in_progress {
+                    @include status-badge(var(--status-in-progress-bg), var(--status-in-progress-text), var(--status-in-progress-border));
                   }
 
                   &.completed {
@@ -749,6 +768,21 @@ $transition: all 0.3s ease;
 
       // History Tab
       .history-tab {
+        .skeleton-list {
+          display: grid;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .reservation-skeleton {
+          height: 136px;
+          border-radius: $radius-lg;
+          border: 1px solid var(--border);
+          background: linear-gradient(90deg, var(--bg-tab-hover) 25%, var(--border) 50%, var(--bg-tab-hover) 75%);
+          background-size: 220% 100%;
+          animation: shimmer 1.2s ease-in-out infinite;
+        }
+
         .history-list {
           display: grid;
           gap: 1rem;
@@ -790,6 +824,10 @@ $transition: all 0.3s ease;
                     @include status-badge(var(--status-confirmed-bg), var(--status-confirmed-text), var(--status-confirmed-border));
                   }
 
+                  &.in_progress {
+                    @include status-badge(var(--status-in-progress-bg), var(--status-in-progress-text), var(--status-in-progress-border));
+                  }
+
                   &.completed {
                     @include status-badge(var(--status-completed-bg), var(--status-completed-text), var(--status-completed-border));
                   }
@@ -811,6 +849,52 @@ $transition: all 0.3s ease;
                 gap: 1.5rem;
                 font-size: 0.875rem;
                 color: var(--text-muted);
+              }
+
+              .history-review {
+                margin-top: 0.75rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+
+                .review-stars {
+                  display: inline-flex;
+                  gap: 0.2rem;
+                  color: var(--rating-star);
+                }
+
+                .review-score {
+                  font-size: 0.82rem;
+                  color: var(--text-muted);
+                }
+
+                .review-text {
+                  margin: 0;
+                  color: var(--text-dark);
+                  font-size: 0.85rem;
+                  font-style: italic;
+                }
+              }
+
+              .history-actions {
+                margin-top: 0.9rem;
+
+                .btn-review {
+                  @include flex-center;
+                  gap: 0.4rem;
+                  padding: 0.5rem 0.9rem;
+                  border-radius: 6px;
+                  border: none;
+                  cursor: pointer;
+                  font-weight: 600;
+                  font-size: 0.85rem;
+                  color: var(--white);
+                  background: #fbbf24;
+
+                  &:hover {
+                    background: #f59e0b;
+                  }
+                }
               }
             }
           }
@@ -949,6 +1033,15 @@ $transition: all 0.3s ease;
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
   }
 }
 
