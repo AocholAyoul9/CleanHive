@@ -37,23 +37,30 @@ export class BookingFlowService {
     booking: Omit<CreateBookingRequest, 'clientId'>,
     client: BookingFlowClientInput,
   ): Observable<void> {
-    const existingId = localStorage.getItem('clientId');
+    const existingId = this.getStoredClientId();
     if (existingId) {
       return this.api.CreateBooking(companyId, { ...booking, clientId: existingId }).pipe(
         map(() => void 0),
-        catchError((err) =>
-          throwError(
-            () =>
-              new BookingFlowError(
-                'Erreur lors de la réservation. Veuillez réessayer.',
-                'booking_failed',
-                err,
-              ),
-          ),
-        ),
+        catchError((err) => {
+          // Recover from stale/deleted client IDs stored in browser storage.
+          if (!this.isClientNotFoundError(err)) {
+            return this.toBookingFailedError(err);
+          }
+
+          localStorage.removeItem('clientId');
+          return this.registerOrLoginAndCreateBooking(companyId, booking, client);
+        }),
       );
     }
 
+    return this.registerOrLoginAndCreateBooking(companyId, booking, client);
+  }
+
+  private registerOrLoginAndCreateBooking(
+    companyId: string,
+    booking: Omit<CreateBookingRequest, 'clientId'>,
+    client: BookingFlowClientInput,
+  ): Observable<void> {
     const tempPassword = 'TempPass123!';
 
     return this.api
@@ -113,16 +120,51 @@ export class BookingFlowService {
         }),
         catchError((err) => {
           if (err instanceof BookingFlowError) return throwError(() => err);
-          return throwError(
-            () =>
-              new BookingFlowError(
-                'Erreur lors de la réservation. Veuillez réessayer.',
-                'booking_failed',
-                err,
-              ),
-          );
+          return this.toBookingFailedError(err);
         }),
       );
   }
-}
 
+  private toBookingFailedError(err: unknown): Observable<never> {
+    return throwError(
+      () =>
+        new BookingFlowError(
+          'Erreur lors de la réservation. Veuillez réessayer.',
+          'booking_failed',
+          err,
+        ),
+    );
+  }
+
+  private isClientNotFoundError(err: unknown): boolean {
+    const message = (err as any)?.error?.message;
+    return typeof message === 'string' && message.toLowerCase().includes('client not found');
+  }
+
+  private getStoredClientId(): string | null {
+    const directClientId = localStorage.getItem('clientId');
+    if (this.isUuid(directClientId)) return directClientId;
+
+    const clientRaw = localStorage.getItem('client');
+    if (!clientRaw) return null;
+
+    try {
+      const parsedId = JSON.parse(clientRaw)?.id;
+      if (this.isUuid(parsedId)) {
+        localStorage.setItem('clientId', parsedId);
+        return parsedId;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  private isUuid(value: unknown): value is string {
+    return (
+      typeof value === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    );
+  }
+}
