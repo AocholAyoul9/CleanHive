@@ -1,0 +1,70 @@
+<div *ngIf="loading" class="skeleton-list">
+  <div class="skeleton-card" *ngFor="let i of [1,2,3]">
+    <div class="skeleton-avatar"></div>
+    <div class="skeleton-lines">
+      <div class="skeleton-line w-60"></div>
+      <div class="skeleton-line w-40"></div>
+      <div class="skeleton-line w-80"></div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!loading && companies.length === 0" class="empty-state">
+  <i class="fas fa-magnifying-glass-location"></i>
+  <h4>{{ emptyTitle }}</h4>
+  <p>{{ emptyDescription }}</p>
+</div>
+
+<div class="cards-container" *ngIf="!loading && companies.length > 0">
+  <div
+    *ngFor="let company of companies; trackBy: trackByCompanyId"
+    class="card"
+    [class.active]="selectedCompany?.id === company.id"
+    (click)="onSelectCompany(company)"
+  >
+    <div class="availability-badge" [class.available]="company.isAvailableNow !== false">
+      <span class="dot"></span>
+      {{ company.isAvailableNow !== false ? 'Disponible' : 'Indisponible' }}
+    </div>
+
+    <div class="card-header">
+      <div class="avatar">
+        <img *ngIf="company.logoUrl" [src]="company.logoUrl" [alt]="company.name" />
+        <span *ngIf="!company.logoUrl" class="initials">{{ getInitials(company.name) }}</span>
+      </div>
+      <div class="info">
+        <h4>{{ company.name }}</h4>
+        <div class="meta">
+          <span class="rating">
+            <i class="fas fa-star"></i>
+            {{ company.rating?.toFixed(1) || '4.5' }}
+            <span class="review-count">({{ company.reviewsCount || 42 }})</span>
+          </span>
+          <span class="distance" *ngIf="company.distance !== undefined">
+            <i class="fas fa-map-pin"></i> {{ formatDistance(company.distance) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="services" *ngIf="company.services?.length">
+      <span class="service-tag">{{ getFirstService(company) }}</span>
+      <span class="service-tag more" *ngIf="getExtraServicesCount(company) > 0">
+        +{{ getExtraServicesCount(company) }} autres
+      </span>
+    </div>
+
+    <div class="price-hint" *ngIf="company.services?.[0]?.basePrice">
+      À partir de <strong>{{ company.services?.[0]?.basePrice }}€</strong>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" (click)="onBookCompany(company); $event.stopPropagation()" [disabled]="company.isAvailableNow === false">
+        <i class="fas fa-calendar-check"></i> Réserver
+      </button>
+      <button class="btn-secondary" [routerLink]="['/company', company.id]" (click)="$event.stopPropagation()">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
