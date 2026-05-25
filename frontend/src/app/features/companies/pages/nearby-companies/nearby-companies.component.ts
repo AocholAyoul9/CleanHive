@@ -38,7 +38,7 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   searchFocused = false;
   sortBy: SortMode = 'distance';
   activeFilter: string | null = null;
-  currentRadius = 10;
+  currentRadius = 50;
 
   selectedCompany = signal<Company | null>(null);
   mapCenter = signal<LatLng>(this.nearbyService.defaultCenter);

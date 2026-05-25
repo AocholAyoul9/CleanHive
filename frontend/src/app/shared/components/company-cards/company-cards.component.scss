@@ -99,11 +99,12 @@
   border-radius: 999px;
   font-size: 12px;
   background: #f1f5f9;
+  color: #334155;
 }
 
 .price-hint {
   margin-top: 8px;
-  color: #334155;
+  color: var(--text-secondary, #64748b) !important;
   font-size: 13px;
 }
 
