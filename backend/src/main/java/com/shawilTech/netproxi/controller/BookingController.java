@@ -37,7 +37,7 @@ public class BookingController {
     @Operation(summary = "Get all bookings for a company")
     @GetMapping
     public ResponseEntity<List<BookingResponseDto>> getCompanyBookings(@PathVariable UUID companyId) {
-        List<BookingResponseDto> bookings = bookingService.getCompanyBookings(companyId);
+        List<BookingResponseDto> bookings = bookingService.getCompanyBookings();
         return ResponseEntity.ok(bookings);
     }
 
@@ -48,8 +48,7 @@ public class BookingController {
             @PathVariable UUID companyId,
             @PathVariable UUID bookingId) {
 
-        // Optional: Validate booking belongs to the company
-        BookingResponseDto cancelledBooking = bookingService.cancelBooking(bookingId);
+        BookingResponseDto cancelledBooking = bookingService.markBookingCancelled(bookingId);
         return ResponseEntity.ok(cancelledBooking);
     }
 
@@ -60,7 +59,12 @@ public class BookingController {
             @PathVariable UUID companyId,
             @PathVariable UUID bookingId,
             @RequestParam BookingStatus status) {
-
+        if (status == BookingStatus.CONFIRMED) {
+            return ResponseEntity.ok(bookingService.markBookingConfirmed(bookingId));
+        }
+        if (status == BookingStatus.CANCELLED) {
+            return ResponseEntity.ok(bookingService.markBookingCancelled(bookingId));
+        }
         BookingResponseDto updatedBooking = bookingService.updateBookingStatus(bookingId, status);
         return ResponseEntity.ok(updatedBooking);
     }
@@ -73,7 +77,7 @@ public class BookingController {
             @RequestParam UUID employeeId) {
 
         return ResponseEntity.ok(
-                bookingService.assignBookingToEmployee(companyId, bookingId, employeeId));
+                bookingService.assignBookingToEmployee(bookingId, employeeId));
     }
 
     // ------------------- GET BOOKING BY ID -------------------

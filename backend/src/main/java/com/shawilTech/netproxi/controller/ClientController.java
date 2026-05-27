@@ -46,10 +46,8 @@ public class ClientController {
     // Load client reservations
     // ------------------------------------------------------------------------
     @GetMapping("/reservations")
-    public ResponseEntity<List<BookingResponseDto>> getClientReservations(
-            @RequestHeader("clientId") UUID clientId // OR decode from JWT
-    ) {
-        return ResponseEntity.ok(bookingService.getClientBookings(clientId));
+    public ResponseEntity<List<BookingResponseDto>> getClientReservations() {
+        return ResponseEntity.ok(bookingService.getClientBookings());
     }
 
     // ------------------------------------------------------------------------
@@ -61,6 +59,9 @@ public class ClientController {
             @RequestBody UpdateStatusDto dto
     ) {
         BookingStatus status = BookingStatus.valueOf(dto.getStatus().toUpperCase());
+        if (status == BookingStatus.CANCELLED) {
+            return ResponseEntity.ok(bookingService.cancelClientBooking(reservationId));
+        }
         return ResponseEntity.ok(bookingService.updateBookingStatus(reservationId, status));
     }
 
@@ -72,7 +73,7 @@ public class ClientController {
             @PathVariable UUID reservationId,
             @RequestBody ReviewRequestDto reviewDto
     ) {
-        bookingService.addReviewToBooking(reservationId, reviewDto);
+        bookingService.addClientReview(reservationId, reviewDto);
         return ResponseEntity.ok("Review added successfully");
     }
 
