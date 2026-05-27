@@ -53,16 +53,8 @@ export class ClientEffects {
     this.loadClientReservations$ = createEffect(() =>
       this.actions$.pipe(
         ofType(ClientActions.loadClientReservations),
-        mergeMap(({ clientId }: { clientId: string }) => {
-          if (!clientId) {
-            return of(
-              ClientActions.loadClientReservationsFailure({
-                error: 'Client ID not found',
-              })
-            );
-          }
-
-          return this.api.getClientReservations(clientId).pipe(
+        mergeMap(() => {
+          return this.api.getClientReservations().pipe(
             map((reservations: Booking[]) =>
               ClientActions.loadClientReservationsSuccess({ reservations })
             ),

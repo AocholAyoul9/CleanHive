@@ -28,7 +28,10 @@ export const setAddress = createAction('[Client] Set Address', props<{address: s
 
 
 // Load client reservations
-export const loadClientReservations = createAction('[Client] Load Reservations', props<{clientId: string}>());
+export const loadClientReservations = createAction(
+  '[Client] Load Reservations',
+  props<{ clientId?: string }>()
+);
 export const loadClientReservationsSuccess = createAction(
   '[Client] Load Reservations Success',
   props<{ reservations: Booking[] }>()

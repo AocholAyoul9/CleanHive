@@ -26,10 +26,8 @@ export class ApiService {
 
 
   // ---------------- Client Reservations ----------------
-  getClientReservations(clientId: string): Observable<Booking[]> {
-    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`, {
-      headers: { clientId },
-    });
+  getClientReservations(): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`);
   }
 
 // ---------------- Client Profile ----------------

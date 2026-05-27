@@ -141,6 +141,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.store.dispatch(ClientActions.loadClientProfile());
+    this.store.dispatch(ClientActions.loadClientReservations({}));
 
     this.setupCompaniesSearchAutocomplete();
     this.loadNearbyUsingUserGeolocation();
@@ -150,7 +151,6 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         const typed = profile as { id?: string } | null;
         if (typed?.id) {
           this.currentClient = { id: typed.id };
-          this.store.dispatch(ClientActions.loadClientReservations({ clientId: typed.id }));
         }
       }),
     );
