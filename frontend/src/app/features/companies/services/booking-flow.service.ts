@@ -26,23 +26,22 @@ export interface BookingFlowClientInput {
 export class BookingFlowService {
   constructor(private api: CompaniesApiService) {}
 
-  /**
-   * Mirrors NearbyCompanies booking behavior:
-   * - use existing localStorage clientId when present
-   * - otherwise register client (TempPass123!), if register fails then try login fallback
-   * - persist clientId in localStorage on success
-   */
+/**
+    * Mirrors NearbyCompanies booking behavior:
+    * - use existing localStorage clientId when present
+    * - otherwise register client (TempPass123!), if register fails then try login fallback
+    * - persist clientId in localStorage on success
+    */
   createBookingWithClient(
     companyId: string,
-    booking: Omit<CreateBookingRequest, 'clientId'>,
+    booking: { serviceId: string; startTime: string; address: string; price?: number },
     client: BookingFlowClientInput,
   ): Observable<void> {
     const existingId = this.getStoredClientId();
     if (existingId) {
-      return this.api.CreateBooking(companyId, { ...booking, clientId: existingId }).pipe(
+      return this.api.CreateBooking(companyId, { ...booking }).pipe(
         map(() => void 0),
         catchError((err) => {
-          // Recover from stale/deleted client IDs stored in browser storage.
           if (!this.isClientNotFoundError(err)) {
             return this.toBookingFailedError(err);
           }
@@ -58,7 +57,7 @@ export class BookingFlowService {
 
   private registerOrLoginAndCreateBooking(
     companyId: string,
-    booking: Omit<CreateBookingRequest, 'clientId'>,
+    booking: { serviceId: string; startTime: string; address: string; price?: number },
     client: BookingFlowClientInput,
   ): Observable<void> {
     const tempPassword = 'TempPass123!';
@@ -86,10 +85,9 @@ export class BookingFlowService {
           }
 
           localStorage.setItem('clientId', id);
-          return this.api.CreateBooking(companyId, { ...booking, clientId: id }).pipe(map(() => void 0));
+          return this.api.CreateBooking(companyId, { ...booking }).pipe(map(() => void 0));
         }),
         catchError((registerErr) => {
-          // NearbyCompanies fallback: try login if register fails
           return this.api.loginClient(client.email, tempPassword).pipe(
             switchMap((loginRes) => {
               const id = loginRes?.id as string | undefined;
@@ -104,7 +102,7 @@ export class BookingFlowService {
                 );
               }
               localStorage.setItem('clientId', id);
-              return this.api.CreateBooking(companyId, { ...booking, clientId: id }).pipe(map(() => void 0));
+              return this.api.CreateBooking(companyId, { ...booking }).pipe(map(() => void 0));
             }),
             catchError((loginErr) =>
               throwError(

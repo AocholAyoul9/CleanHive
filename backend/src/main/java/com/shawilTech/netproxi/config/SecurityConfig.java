@@ -28,23 +28,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(org.springframework.security.config.Customizer.withDefaults())
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/companies/nearby", "/api/companies/login", "/api/companies", "/api/companies/*").permitAll()
-                        .requestMatchers("/api/clients/register").permitAll()
-                        .requestMatchers("/api/clients/login").permitAll()
-                        .requestMatchers("/api/employee/login").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated())
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+http
+                 .csrf(AbstractHttpConfigurer::disable)
+                 .cors(org.springframework.security.config.Customizer.withDefaults())
+                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                 .authorizeHttpRequests(auth -> auth
+                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                         .requestMatchers("/api/auth/**").permitAll()
+                         .requestMatchers("/api/companies/nearby", "/api/companies/login", "/api/companies", "/api/companies/*").permitAll()
+                         .requestMatchers("/api/clients/register").permitAll()
+                         .requestMatchers("/api/employee/login").permitAll()
+                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                         .anyRequest().authenticated())
+                 .httpBasic(AbstractHttpConfigurer::disable)
+                 .formLogin(AbstractHttpConfigurer::disable)
+                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

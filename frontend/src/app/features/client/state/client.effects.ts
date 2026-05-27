@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, mergeMap, catchError } from 'rxjs/operators';
+import { map, mergeMap, catchError, tap } from 'rxjs/operators';
 import * as ClientActions from './client.actions';
 import { ApiService } from '../../../core/api.service';
 import {
@@ -36,6 +36,9 @@ export class ClientEffects {
         ofType(ClientActions.loadClientProfile),
         mergeMap(() =>
           this.api.getClientProfile().pipe(
+            tap((profile: any) => {
+              console.log('Client profile response:', profile);
+            }),
             map((profile: any) =>
               ClientActions.loadClientProfileSuccess({ profile })
             ),
@@ -55,9 +58,16 @@ export class ClientEffects {
         ofType(ClientActions.loadClientReservations),
         mergeMap(() => {
           return this.api.getClientReservations().pipe(
+<<<<<<< HEAD
             map((reservations: Booking[]) =>
               ClientActions.loadClientReservationsSuccess({ reservations })
             ),
+=======
+            map((reservations: Booking[]) => {
+              console.log('Reservations API response', reservations);
+              return ClientActions.loadClientReservationsSuccess({ reservations });
+            }),
+>>>>>>> 37677ad (feat: Enhance security and client features)
             catchError((error: any) =>
               of(
                 ClientActions.loadClientReservationsFailure({

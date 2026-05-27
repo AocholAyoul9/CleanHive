@@ -31,11 +31,11 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             @Param("endTime") LocalDateTime endTime,
             @Param("startTime") LocalDateTime startTime);
 
-  boolean existsByEmployeeIdAndStartTimeLessThanAndEndTimeGreaterThan(
-    UUID employeeId,
-    LocalDateTime endTime,
-    LocalDateTime startTime
-);
+    boolean existsByEmployeeIdAndStartTimeLessThanAndEndTimeGreaterThan(
+        UUID employeeId,
+        LocalDateTime endTime,
+        LocalDateTime startTime
+    );
 
     @Query("SELECT (COUNT(b) > 0) FROM Booking b WHERE b.employee.id = :employeeId " +
             "AND b.status NOT IN ('CANCELLED', 'COMPLETED') " +
@@ -53,6 +53,9 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByEmployeeIdAndStartTimeBetweenOrderByStartTimeAsc(UUID employeeId, LocalDateTime start, LocalDateTime end);
     long countByClientIdAndStatus(UUID clientId, BookingStatus status);
 
+    // History includes both COMPLETED and CANCELLED
+    @Query("SELECT b FROM Booking b WHERE b.client.id = :clientId AND b.status IN ('COMPLETED', 'CANCELLED')")
+    List<Booking> findByClientIdAndStatusInHistory(@Param("clientId") UUID clientId);
 
 
     // New methods for employee dashboard

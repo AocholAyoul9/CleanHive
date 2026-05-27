@@ -95,7 +95,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<BookingResponseDto> getClientBookingHistory() {
         UUID clientId = getCurrentClient().getId();
-        return bookingRepository.findByClientIdAndStatus(clientId, BookingStatus.COMPLETED)
+        return bookingRepository.findByClientIdAndStatusInHistory(clientId)
                 .stream()
                 .map(this::mapToBookingResponseDto)
                 .collect(Collectors.toList());
@@ -285,16 +285,10 @@ public class BookingService {
     }
 
     private Client getCurrentClient() {
+        String principal = getCurrentPrincipal();
         User user = getCurrentUser();
-        return clientRepository.findByEmail(user.getEmail()).orElseGet(() -> {
-            Client client = new Client();
-            client.setName(user.getUsername());
-            client.setEmail(user.getEmail());
-            client.setAddress(user.getAddress());
-            client.setPhone(user.getPhone());
-            client.setPassword("N/A");
-            return clientRepository.save(client);
-        });
+        return clientRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new UnauthorizedActionException("Client profile not found for authenticated user. Please complete client registration."));
     }
 
     private Company getCurrentCompanyAdmin() {

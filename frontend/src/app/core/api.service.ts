@@ -5,14 +5,14 @@ import { getClientId } from '../features/auth/utils/token-storage';
 import { Booking } from '../features/booking/models/booking.model';
 import { ClientProfile } from '../features/client/models/client.model';
 import { EmployeeProfile, EmployeeTask ,EmployeeSchedule , EmployeeStats, EmployeeNotification} from '../features/employee/models/employee.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  //private baseUrl = 'http://localhost:8080/api';
-  private baseUrl = 'https://netproxi.onrender.com/api';
-
+  
+  private baseUrl = environment.apiUrl;
   constructor(private http: HttpClient) {}
 
   /* private getHeaders(): HttpHeaders {
@@ -26,8 +26,10 @@ export class ApiService {
 
 
   // ---------------- Client Reservations ----------------
-  getClientReservations(): Observable<Booking[]> {
-    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`);
+  getClientReservations(clientId: string): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`, {
+      headers: { clientId },
+    });
   }
 
 // ---------------- Client Profile ----------------

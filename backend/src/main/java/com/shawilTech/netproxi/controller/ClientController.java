@@ -33,21 +33,27 @@ public class ClientController {
     }
 
 
-    // getClienPtProfile
-    @GetMapping("/profile")
-    public ResponseEntity<ClientResponseDto> getClientProfile(
-            @RequestHeader("clientId") UUID clientId 
-    ) {
-        ClientResponseDto response = clientService.getClientProfile(clientId);
-        return ResponseEntity.ok(response);
-    }
-
      // ------------------------------------------------------------------------
-    // Load client reservations
+    // Load client reservations - uses JWT authentication for proper client lookup
     // ------------------------------------------------------------------------
     @GetMapping("/reservations")
     public ResponseEntity<List<BookingResponseDto>> getClientReservations() {
         return ResponseEntity.ok(bookingService.getClientBookings());
+    }
+
+    @GetMapping("/reservations/upcoming")
+    public ResponseEntity<List<BookingResponseDto>> getUpcomingReservations() {
+        return ResponseEntity.ok(bookingService.getClientUpcomingBookings());
+    }
+
+    @GetMapping("/reservations/history")
+    public ResponseEntity<List<BookingResponseDto>> getBookingHistory() {
+        return ResponseEntity.ok(bookingService.getClientBookingHistory());
+    }
+
+    @GetMapping("/reservations/dashboard-summary")
+    public ResponseEntity<java.util.Map<String, Long>> getBookingSummary() {
+        return ResponseEntity.ok(bookingService.getClientDashboardSummary());
     }
 
     // ------------------------------------------------------------------------
@@ -75,6 +81,14 @@ public class ClientController {
     ) {
         bookingService.addClientReview(reservationId, reviewDto);
         return ResponseEntity.ok("Review added successfully");
+    }
+
+    // ------------------------------------------------------------------------
+    // Get client profile (JWT authenticated)
+    // ------------------------------------------------------------------------
+    @GetMapping("/profile")
+    public ResponseEntity<ClientResponseDto> getClientProfile() {
+        return ResponseEntity.ok(clientService.getClientProfile());
     }
 
 }

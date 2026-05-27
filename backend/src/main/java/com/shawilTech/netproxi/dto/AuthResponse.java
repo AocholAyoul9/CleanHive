@@ -20,5 +20,6 @@ public class AuthResponse {
     private String role;
     private List<String> roles;
     private UUID companyId;
+    private UUID id;
     private String message;
 }

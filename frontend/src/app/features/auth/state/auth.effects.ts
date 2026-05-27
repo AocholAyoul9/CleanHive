@@ -5,6 +5,7 @@ import { catchError, map, mergeMap, of, tap } from 'rxjs';
 import { AuthApiService } from '../services/auth.api.service';
 import * as AuthActions from './auth.actions';
 import * as CompanyActions from '../../companies/state/company.actions';
+import * as ClientActions from '../../client/state/client.actions';
 import { AuthUser } from '../models/user.model';
 import { setToken, setRefreshToken, clearTokens } from '../utils/token-storage';
 
@@ -66,10 +67,29 @@ export class AuthEffects {
             company: '/company-admin-dashboard',
             employee: '/employee-dashboard',
           };
+          // Store user type for client reservations
+          if (userType === 'client') {
+            localStorage.setItem('userType', userType);
+          }
           this.router.navigate([routeMap[userType] ?? '/']);
         })
       ),
     { dispatch: false }
+  );
+
+  // Load client reservations after client login
+  loadClientReservationsOnLogin$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.loginSuccess),
+      mergeMap(({ userType }) => {
+        if (userType === 'client') {
+          return of(
+            ClientActions.loadClientReservations()
+          );
+        }
+        return of();
+      })
+    )
   );
 
   // ----------------------

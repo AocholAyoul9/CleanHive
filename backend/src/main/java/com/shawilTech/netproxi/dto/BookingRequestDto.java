@@ -13,10 +13,9 @@ import java.math.BigDecimal;
 @Data
 public class BookingRequestDto {
     private UUID companyId;
-    private UUID clientId;
-    private UUID employeeId; 
     @NotNull
     private UUID serviceId;
+    private UUID employeeId;
     @NotNull
     @Future
     private LocalDateTime startTime;
