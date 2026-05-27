@@ -58,16 +58,10 @@ export class ClientEffects {
         ofType(ClientActions.loadClientReservations),
         mergeMap(() => {
           return this.api.getClientReservations().pipe(
-<<<<<<< HEAD
-            map((reservations: Booking[]) =>
-              ClientActions.loadClientReservationsSuccess({ reservations })
-            ),
-=======
             map((reservations: Booking[]) => {
               console.log('Reservations API response', reservations);
               return ClientActions.loadClientReservationsSuccess({ reservations });
             }),
->>>>>>> 37677ad (feat: Enhance security and client features)
             catchError((error: any) =>
               of(
                 ClientActions.loadClientReservationsFailure({

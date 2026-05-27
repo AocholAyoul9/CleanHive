@@ -1,49 +1,28 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { getClientId } from '../features/auth/utils/token-storage';
 import { Booking } from '../features/booking/models/booking.model';
 import { ClientProfile } from '../features/client/models/client.model';
-import { EmployeeProfile, EmployeeTask ,EmployeeSchedule , EmployeeStats, EmployeeNotification} from '../features/employee/models/employee.model';
+import { EmployeeProfile, EmployeeTask, EmployeeSchedule, EmployeeStats, EmployeeNotification } from '../features/employee/models/employee.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  
   private baseUrl = environment.apiUrl;
+
   constructor(private http: HttpClient) {}
 
-  /* private getHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      Authorization: token ? `Bearer ${token}` : '',
-    });
-  }*/
-
-
-  // ---------------- Client Reservations ----------------
-  getClientReservations(clientId: string): Observable<Booking[]> {
-    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`, {
-      headers: { clientId },
-    });
+  // ---------------- Client Reservations (JWT authenticated) ----------------
+  getClientReservations(): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.baseUrl}/clients/reservations`);
   }
 
-// ---------------- Client Profile ----------------
-getClientProfile(): Observable<ClientProfile> {
-  const clientId = getClientId();
-
-  return this.http.get<ClientProfile>(`${this.baseUrl}/clients/profile`, {
-    headers: new HttpHeaders({
-      clientId: clientId
-    })
-  });
-}
-
-
+  // ---------------- Client Profile (JWT authenticated) ----------------
+  getClientProfile(): Observable<ClientProfile> {
+    return this.http.get<ClientProfile>(`${this.baseUrl}/clients/profile`);
+  }
 
   // ---------------- Update Reservation Status ----------------
   updateReservationStatus(reservationId: string, status: string): Observable<void> {
@@ -55,24 +34,20 @@ getClientProfile(): Observable<ClientProfile> {
     return this.http.post<void>(`${this.baseUrl}/clients/reservations/${reservationId}/review`, { rating, review });
   }
 
-
   // ---------------- Update Favorite Company ----------------
   updateFavoriteCompany(companyId: string, isFavorite: boolean): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/clients/companies/${companyId}/favorite`, { isFavorite });
   }
 
-//employee Dashboard
-// ------------ Méthodes Employé ---------------
+  // ------------ Employee Methods ---------------
+  private getEmployeeHeaders() {
+    const employeeId = localStorage.getItem('employeeId');
 
-private getEmployeeHeaders(): HttpHeaders {
-  const employeeId = localStorage.getItem('employeeId');
-
-  return new HttpHeaders({
-    'Content-Type': 'application/json',
-    employeeId: employeeId ?? ''
-  });
-}
-
+    return {
+      'Content-Type': 'application/json',
+      employeeId: employeeId ?? ''
+    };
+  }
 
   // 1. Get employee profile for dashboard
   getEmployeeProfile(): Observable<EmployeeProfile> {
@@ -211,6 +186,4 @@ private getEmployeeHeaders(): HttpHeaders {
       { headers: this.getEmployeeHeaders() }
     );
   }
-
-
 }

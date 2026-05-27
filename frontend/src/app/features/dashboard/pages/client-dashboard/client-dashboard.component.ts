@@ -141,60 +141,43 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.store.dispatch(ClientActions.loadClientProfile());
-    this.store.dispatch(ClientActions.loadClientReservations({}));
 
     this.setupCompaniesSearchAutocomplete();
     this.loadNearbyUsingUserGeolocation();
 
-<<<<<<< HEAD
     this.subscriptions.add(
       this.profile$.subscribe((profile) => {
         const typed = profile as { id?: string } | null;
         if (typed?.id) {
           this.currentClient = { id: typed.id };
         }
+        this.store.dispatch(ClientActions.loadClientReservations());
       }),
     );
     this.dashboardStatsLocal$ = this.reservations$.pipe(
       map((reservations) => {
+        console.log('Current client', this.currentClient);
+        console.log('Reservations', reservations);
         const upcoming = reservations.filter(
           (reservation) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(reservation.status),
         ).length;
-=======
-this.subscriptions.add(
-       this.profile$.subscribe((profile) => {
-         const typed = profile as { id?: string } | null;
-         if (typed?.id) {
-           this.currentClient = { id: typed.id };
-         }
-         this.store.dispatch(ClientActions.loadClientReservations());
-       }),
-     );
-this.dashboardStatsLocal$ = this.reservations$.pipe(
-       map((reservations) => {
-         console.log('Current client', this.currentClient);
-         console.log('Reservations', reservations);
-         const upcoming = reservations.filter(
-           (reservation) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(reservation.status),
-         ).length;
->>>>>>> 37677ad (feat: Enhance security and client features)
 
-         const completed = reservations.filter((reservation) => reservation.status === 'COMPLETED').length;
-         const cancelled = reservations.filter((reservation) => reservation.status === 'CANCELLED').length;
+        const completed = reservations.filter((reservation) => reservation.status === 'COMPLETED').length;
+        const cancelled = reservations.filter((reservation) => reservation.status === 'CANCELLED').length;
 
-         const totalSpent = reservations
-           .filter((reservation) => reservation.status === 'COMPLETED')
-           .reduce((sum, reservation) => sum + (reservation.price || 0), 0);
+        const totalSpent = reservations
+          .filter((reservation) => reservation.status === 'COMPLETED')
+          .reduce((sum, reservation) => sum + (reservation.price || 0), 0);
 
-         return {
-           upcoming,
-           completed,
-           cancelled,
-           total: reservations.length,
-           totalSpent,
-         };
-       }),
-     );
+        return {
+          upcoming,
+          completed,
+          cancelled,
+          total: reservations.length,
+          totalSpent,
+        };
+      }),
+    );
   }
 
   ngOnDestroy(): void {
