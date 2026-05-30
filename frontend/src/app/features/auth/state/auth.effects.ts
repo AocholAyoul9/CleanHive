@@ -95,27 +95,43 @@ export class AuthEffects {
   // ----------------------
   // REGISTER EFFECT
   // ----------------------
+
   register$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.register),
-      mergeMap(({ userData, userType }) =>
-        this.authApiService.register(userData, userType).pipe(
-          tap((res) => {
-            setToken(res.token);
-            if (res.refreshToken) setRefreshToken(res.refreshToken);
-          }),
-          map((res) => AuthActions.registerSuccess({ user: res, userType })),
-          catchError((error) =>
-            of(
-              AuthActions.registerFailure({
-                error: error?.error?.message ?? error.message ?? 'Registration failed',
-              })
-            )
+  this.actions$.pipe(
+    ofType(AuthActions.register),
+    mergeMap(({ userData, userType }) =>
+      this.authApiService.register(userData, userType).pipe(
+        tap((res) => {
+          setToken(res.token);
+          if (res.refreshToken) {
+            setRefreshToken(res.refreshToken);
+          }
+        }),
+        map((res) => {
+          const user: AuthUser = {
+            id: res.id ?? '',
+            name: res.name ?? res.username ?? '',
+            email: res.email ?? '',
+            role: userType,
+          };
+
+          return AuthActions.loginSuccess({
+            user,
+            accessToken: res.token,
+            userType,
+          });
+        }),
+        catchError((error) =>
+          of(
+            AuthActions.registerFailure({
+              error: error?.error?.message ?? 'Registration failed',
+            })
           )
         )
       )
     )
-  );
+  )
+);
 
 
   registerSuccess$ = createEffect(

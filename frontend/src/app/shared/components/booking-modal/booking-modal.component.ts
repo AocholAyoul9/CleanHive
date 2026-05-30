@@ -117,12 +117,23 @@ export class BookingModalComponent implements OnChanges {
           this.bookingSuccess.set(true);
           this.bookingCompleted.emit();
         },
-        error: (error: unknown) => {
+        error: (error: any) => {
           this.bookingLoading.set(false);
-          const message =
-            error instanceof Error ? error.message : 'Erreur lors de la réservation. Veuillez réessayer.';
-          alert(message);
-        },
+
+          const status =
+            error?.status ||
+            error?.cause?.status;
+
+          if (status === 401 || status === 403) {
+            alert('Vous devez être connecté pour réserver un service.');
+            return;
+          }
+
+          alert(
+            error?.message ||
+            'Erreur lors de la réservation. Veuillez réessayer.'
+          );
+        }
       });
   }
 
