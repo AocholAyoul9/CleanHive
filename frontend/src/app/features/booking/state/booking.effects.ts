@@ -20,13 +20,13 @@ export class BookingEffects {
             mergeMap((response: any) => {
               const fullBooking: Booking = {
                 ...response,
-                startTime: new Date(response.startTime),
-                endTime: new Date(response.endTime),
+                startTime: response.startTime,
+                endTime: response.endTime,
               };
 
               return from([
                 BookingActions.createBookingSuccess({ booking: fullBooking }),
-                ClientActions.loadClientReservations({ clientId: fullBooking.clientId }),
+                ClientActions.loadClientReservations(),
               ]);
             }),
             catchError((error) =>

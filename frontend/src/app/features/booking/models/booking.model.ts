@@ -16,12 +16,11 @@ export interface Booking {
   serviceDuration: number;
 
   // Booking Times
-  startTime:string; // ISO string from backend
-  endTime: Date;   // ISO string from backend
+  startTime: string; // ISO string from backend
+  endTime: string;   // ISO string from backend
 
   // Address
   address: string;
-assignedEmployeeName?: string;
   // Price
   price: number;
 
@@ -33,14 +32,13 @@ assignedEmployeeName?: string;
   status: string;
   durationMinutes?: number;
 
-  /*// Auto-assigned employee (backend adds this)
+  // Auto-assigned employee (backend adds this)
   assignedEmployeeId?: string;
-  assignedEmployeeName?: string;*/
+  assignedEmployeeName?: string;
 }
 
 
 export interface CreateBookingRequest {
-  clientId: string;     // ID of the client making the booking
   serviceId: string;    // ID of the selected service
   startTime: string;    // ISO string of the booking start time
   address: string;      // Address for the booking

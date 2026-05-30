@@ -16,12 +16,15 @@ public class BookingResponseDto {
     private String serviceName;
     private UUID companyId;
     private String companyName;
-    private UUID agentId;
+    private UUID employeeId;
+    private String employeeName;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String address;
     private BigDecimal price;
     private String status;
+    private Integer rating;
+    private String review;
 
     private UUID assignedEmployeeId;
     private String assignedEmployeeName;

@@ -150,12 +150,14 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         const typed = profile as { id?: string } | null;
         if (typed?.id) {
           this.currentClient = { id: typed.id };
-          this.store.dispatch(ClientActions.loadClientReservations({ clientId: typed.id }));
         }
+        this.store.dispatch(ClientActions.loadClientReservations());
       }),
     );
     this.dashboardStatsLocal$ = this.reservations$.pipe(
       map((reservations) => {
+        console.log('Current client', this.currentClient);
+        console.log('Reservations', reservations);
         const upcoming = reservations.filter(
           (reservation) => ['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(reservation.status),
         ).length;
