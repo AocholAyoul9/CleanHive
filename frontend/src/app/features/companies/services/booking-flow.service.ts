@@ -9,6 +9,7 @@ export class BookingFlowError extends Error {
   constructor(
     message: string,
     public code: BookingFlowErrorCode,
+    public status?: unknown,
     override cause?: unknown,
   ) {
     super(message);
@@ -129,6 +130,7 @@ export class BookingFlowService {
         new BookingFlowError(
           'Erreur lors de la réservation. Veuillez réessayer.',
           'booking_failed',
+          (err as any)?.status,
           err,
         ),
     );
