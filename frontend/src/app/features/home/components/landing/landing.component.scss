@@ -2,23 +2,6 @@
 $radius-card: 1.5rem;
 $radius-pill: 3rem;
 
-// ---------- Animations (unchanged) ----------
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  20%,60% { transform: translateX(-6px); }
-  40%,80% { transform: translateX(6px); }
-}
-
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50%     { transform: translateY(-18px); }
-}
-
-@keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 // =============================================
 // BASE
 // =============================================
@@ -120,8 +103,6 @@ h2 {
     font-weight: 600;
     color: var(--brand);
     text-decoration: none;
-    transition: all 0.2s;
-    box-shadow: var(--shadow-sm);
     cursor: pointer;
     i { font-size: 1.2rem; }
     strong { margin-left: 0.3rem; text-decoration: underline; }
@@ -130,8 +111,6 @@ h2 {
       background: var(--brand);
       color: var(--bg);
       border-color: var(--brand-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
       
       i, strong { color: var(--bg); }
     }
@@ -153,7 +132,7 @@ h2 {
 }
 
 .hero-content {
-  animation: fadeSlideUp .7s ease both;
+  // animation removed
 }
 
 h1 {
@@ -188,16 +167,16 @@ h1 {
   align-items: center;
   background: var(--bg);
   border-radius: $radius-pill;
-  box-shadow: var(--shadow-md), 0 0 0 1px var(--border);
+  border: 1px solid var(--border);
   padding: .4rem .4rem .4rem 0;
   gap: .5rem;
-  transition: box-shadow .25s;
 
   &:focus-within {
-    box-shadow: var(--shadow-lg), 0 0 0 2px var(--brand);
+    border-color: var(--brand);
   }
 
-  &.shake { animation: shake .4s ease; }
+  // shake class kept but animation removed
+  &.shake { }
 }
 
 .search-icon {
@@ -233,7 +212,6 @@ h1 {
   justify-content: center;
   cursor: pointer;
   color: var(--brand);
-  transition: background .2s, border-color .2s;
 
   &:hover { background: var(--brand-light); border-color: var(--brand); }
   &:disabled { opacity: .5; cursor: not-allowed; }
@@ -251,9 +229,8 @@ h1 {
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background .2s, transform .15s;
 
-  &:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); }
+  &:hover:not(:disabled) { background: var(--brand-dark); }
   &:disabled { opacity: .65; cursor: not-allowed; }
 }
 
@@ -284,7 +261,7 @@ h1 {
 .hero-icon {
   font-size: 6rem;
   color: white;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,.18));
+  // drop-shadow removed
 }
 
 .floating-card {
@@ -292,7 +269,7 @@ h1 {
   background: var(--bg);
   border-radius: $radius-pill;
   padding: .6rem 1.2rem;
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: .5rem;
@@ -302,9 +279,9 @@ h1 {
 
   i { color: var(--brand); }
 
-  &.card-1 { top: 14%; left: 0; animation: float 6s 0s   ease-in-out infinite; }
-  &.card-2 { bottom: 16%; right: 0; animation: float 6s 2s   ease-in-out infinite; }
-  &.card-3 { top: 60%; left: 4%;  animation: float 6s 1s   ease-in-out infinite; }
+  &.card-1 { top: 14%; left: 0; }
+  &.card-2 { bottom: 16%; right: 0; }
+  &.card-3 { top: 60%; left: 4%;  }
 }
 
 // =============================================
@@ -330,9 +307,6 @@ h1 {
   padding: 2rem 1.5rem;
   position: relative;
   border: 1px solid var(--border);
-  transition: transform .25s, box-shadow .25s;
-
-  &:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
 
   .step-number {
     position: absolute;
@@ -420,9 +394,6 @@ h1 {
   padding: 2rem 1.5rem;
   border: 1px solid var(--border);
   text-align: left;
-  transition: transform .25s, box-shadow .25s;
-
-  &:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
 
   .why-icon {
     background: var(--brand-light);
@@ -470,10 +441,6 @@ h1 {
   padding: 1.75rem;
   text-align: left;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  transition: transform .25s, box-shadow .25s;
-
-  &:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
 
   .testimonial-rating {
     margin-bottom: 1rem;
