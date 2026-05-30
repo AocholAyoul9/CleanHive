@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Company } from '../models/company.model';
 import { ServiceModel } from '../../../shared/models/service.model';
-import { Booking, CreateBookingRequest } from '../../../features/booking/models/booking.model';
+import { Booking } from '../../../features/booking/models/booking.model';
 import { NearbyCompany } from '../../client/models/client.model';
 import { environment } from '../../../../environments/environment';
 @Injectable({
@@ -83,7 +83,7 @@ private baseUrl = environment.apiUrl;
 
   CreateBooking(
     companyId: string,
-    booking: CreateBookingRequest
+    booking: { serviceId: string; startTime: string; address: string; price?: number }
   ): Observable<Booking> {
     return this.http.post<Booking>(
       `${this.baseUrl}/companies/${companyId}/bookings`,

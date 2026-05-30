@@ -3,6 +3,7 @@ package com.shawilTech.netproxi.entity;
 public enum BookingStatus {
     PENDING,
     CONFIRMED,
-    CANCELLED,
+    IN_PROGRESS,
     COMPLETED,
+    CANCELLED,
 }
