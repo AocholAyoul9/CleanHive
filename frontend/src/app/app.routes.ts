@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ProSignupComponent } from './pages/pro-signup/pro-signup.component';
+import { ProSignupComponent } from './features/pro-signup/pro-signup.component';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/home/components/landing/landing.component').then((m) => m.LandingComponent), pathMatch: 'full' },
