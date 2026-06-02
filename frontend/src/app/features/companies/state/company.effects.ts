@@ -162,6 +162,18 @@ export class CompanyEffects {
     )
   );
 
+  assignEmployeeToBooking$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CompanyActions.assignEmployeeToBooking),
+      mergeMap(({ companyId, bookingId, employeeId }) =>
+        this.api.assignBookingToEmployee(companyId, bookingId, employeeId).pipe(
+          map((booking) => CompanyActions.assignEmployeeToBookingSuccess({ booking })),
+          catchError((error) => of(CompanyActions.assignEmployeeToBookingFailure({ error })))
+        )
+      )
+    )
+  );
+
   private api = inject(CompaniesApiService);
 
   companyCrudSuccessNotifications$ = createEffect(

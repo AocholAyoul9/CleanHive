@@ -58,6 +58,57 @@ export const employeeReducer = createReducer(
     loading: false
   })),
 
+  // Today's Tasks
+  on(EmployeeActions.loadTodayTasks, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EmployeeActions.loadTodayTasksSuccess, (state, { tasks }) => ({
+    ...state,
+    todayTasks: tasks,
+    loading: false
+  })),
+  on(EmployeeActions.loadTodayTasksFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
+  })),
+
+  // Upcoming Tasks
+  on(EmployeeActions.loadUpcomingTasks, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EmployeeActions.loadUpcomingTasksSuccess, (state, { tasks }) => ({
+    ...state,
+    upcomingTasks: tasks,
+    loading: false
+  })),
+  on(EmployeeActions.loadUpcomingTasksFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
+  })),
+
+  // Completed Tasks
+  on(EmployeeActions.loadCompletedTasks, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EmployeeActions.loadCompletedTasksSuccess, (state, { tasks }) => ({
+    ...state,
+    completedTasks: tasks,
+    loading: false
+  })),
+  on(EmployeeActions.loadCompletedTasksFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
+  })),
+
   // Update Task Status
   on(EmployeeActions.updateTaskStatus, (state) => ({
     ...state,

@@ -39,13 +39,6 @@ public class EmployeeDashboardService {
     @Transactional(readOnly = true)
     public EmployeeProfileResponseDto getProfile() {
         Employee employee = getCurrentEmployee();
-        List<Booking> tasks = bookingRepository.findByEmployeeId(employee.getId());
-
-        long completed = tasks.stream().filter(b -> b.getStatus() == BookingStatus.COMPLETED).count();
-        long pending = tasks.stream().filter(b -> b.getStatus() == BookingStatus.PENDING
-                || b.getStatus() == BookingStatus.CONFIRMED).count();
-        double avgRating = tasks.stream().filter(b -> b.getRating() != null)
-                .mapToInt(Booking::getRating).average().orElse(0);
 
         return EmployeeProfileResponseDto.builder()
                 .id(employee.getId())
@@ -55,12 +48,8 @@ public class EmployeeDashboardService {
                 .address(employee.getAddress())
                 .companyId(employee.getCompany().getId())
                 .companyName(employee.getCompany().getName())
-                .totalTasks(tasks.size())
-                .completedTasks((int) completed)
-                .pendingTasks((int) pending)
-                .averageRating(avgRating)
                 .isAvailable(employee.isAvailable())
-                .joinDate(employee.getCreatedAt().toLocalDate().toString())
+                .joinDate(employee.getCreatedAt() != null ? employee.getCreatedAt().toLocalDate().toString() : null)
                 .build();
     }
 
@@ -69,7 +58,8 @@ public class EmployeeDashboardService {
         Employee employee = getCurrentEmployee();
         if (dto.getName() != null) employee.setName(dto.getName());
         if (dto.getPhone() != null) employee.setPhone(dto.getPhone());
-        if (dto.getAddress() != null) employee.setAddress(dto.getAddress());    
+        if (dto.getAddress() != null) employee.setAddress(dto.getAddress());
+        if (dto.getIsAvailable() != null) employee.setAvailable(dto.getIsAvailable());
         Employee updated = employeeRepository.save(employee);
         return getProfile();
     }
@@ -78,18 +68,11 @@ public class EmployeeDashboardService {
 
     @Transactional(readOnly = true)
     public List<EmployeeTaskResponseDto> getTasks() {
-        return getTasks(null, null, null);
-    }
-
-    @Transactional(readOnly = true)
-    public List<EmployeeTaskResponseDto> getTasks(String status, String date, String priority) {
         Employee employee = getCurrentEmployee();
 
         List<Booking> tasks = bookingRepository.findByEmployeeId(employee.getId());
 
         return tasks.stream()
-                .filter(b -> status == null || b.getStatus().name().equalsIgnoreCase(status))
-                .filter(b -> date == null || b.getStartTime().toLocalDate().toString().equals(date))
                 .map(this::convertToTaskDto)
                 .collect(Collectors.toList());
     }
@@ -108,10 +91,12 @@ public class EmployeeDashboardService {
     @Transactional(readOnly = true)
     public List<EmployeeTaskResponseDto> getUpcomingTasks() {
         Employee employee = getCurrentEmployee();
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
 
         return bookingRepository.findByEmployeeId(employee.getId()).stream()
-                .filter(b -> b.getStartTime().toLocalDate().isAfter(today))
+                .filter(b -> b.getStartTime().isAfter(now))
+                .filter(b -> b.getStatus() != BookingStatus.COMPLETED)
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
                 .map(this::convertToTaskDto)
                 .collect(Collectors.toList());
     }
@@ -227,8 +212,6 @@ public class EmployeeDashboardService {
                         .build())
                 .collect(Collectors.toList());
     }
-
-    // ---------------- AVAILABILITY ----------------
 
     @Transactional
     public void updateAvailability(UpdateAvailabilityDto dto) {
