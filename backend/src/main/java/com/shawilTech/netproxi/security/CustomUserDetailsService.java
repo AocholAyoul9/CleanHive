@@ -32,25 +32,23 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(usernameOrEmail)
                 .or(() -> userRepository.findByEmail(usernameOrEmail))
                 .orElse(null);
-        
+
         if (user != null) {
+            boolean hasRoleClient = user.getRoles() != null
+                    && user.getRoles().stream().anyMatch(role -> "ROLE_CLIENT".equalsIgnoreCase(role.getName()));
+            if (hasRoleClient) {
+                Client client = clientRepository.findByEmail(user.getEmail()).orElse(null);
+                if (client != null) {
+                    return new ClientPrincipal(client);
+                }
+            }
             return new CustomUserDetails(user);
         }
 
-        // If not found, try to find a Client and create a temporary UserDetails
+        // If not found, try to find a Client
         Client client = clientRepository.findByEmail(usernameOrEmail).orElse(null);
         if (client != null) {
-            // Create a temporary User entity for authentication purposes
-            User tempUser = new User();
-            tempUser.setUsername(client.getEmail());
-            tempUser.setEmail(client.getEmail());
-            tempUser.setPassword(client.getPassword());
-            // Assign ROLE_CLIENT for clients
-            Role clientRole = new Role();
-            clientRole.setId(UUID.randomUUID());
-            clientRole.setName("ROLE_CLIENT");
-            tempUser.setRoles(Collections.singleton(clientRole));
-            return new CustomUserDetails(tempUser);
+            return new ClientPrincipal(client);
         }
 
         throw new UsernameNotFoundException("User not found: " + usernameOrEmail);
