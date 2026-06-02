@@ -19,6 +19,23 @@ export const loginFailure = createAction(
   props<{ error: string }>()
 );
 
+export const restoreSession = createAction('[Auth] Restore Session');
+
+export const restoreSessionSuccess = createAction(
+  '[Auth] Restore Session Success',
+  props<{
+    user: AuthUser;
+    accessToken: string;
+    refreshToken: string | null;
+    userType: 'client' | 'company' | 'employee';
+  }>()
+);
+
+export const restoreSessionFailure = createAction(
+  '[Auth] Restore Session Failure',
+  props<{ error: string }>()
+);
+
 // ----------------------
 // REGISTER
 // ----------------------
