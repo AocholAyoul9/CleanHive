@@ -1,17 +1,19 @@
 package com.shawilTech.identityservice.service;
 
+import com.shawilTech.netproxi.dto.*;
+import com.shawilTech.netproxi.entity.*;
+import com.shawilTech.netproxi.repository.*;
+import com.shawilTech.netproxi.security.JwtTokenProvider;
+import com.shawilTech.netproxi.service.AuthService;
+import com.shawilTech.netproxi.service.NominatimGeocodingService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import com.shawilTech.netproxi.dto.*;
-import com.shawilTech.netproxi.entity.*;
-import com.shawilTech.netproxi.repository.*;
-import com.shawilTech.netproxi.security.JwtTokenProvider;
-import com.shawilTech.netproxi.service.AuthService;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -30,6 +32,10 @@ class AuthServiceTest {
     @Mock
     private CompanyRepository companyRepository;
     @Mock
+    private ClientRepository clientRepository;
+    @Mock
+    private NominatimGeocodingService geocodingService;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private JwtTokenProvider jwtProvider;
@@ -37,7 +43,10 @@ class AuthServiceTest {
     @InjectMocks
     private AuthService authService;
 
-    // ========================= LOGIN TESTS =========================
+    @BeforeEach
+    void injectDependencies() {
+        ReflectionTestUtils.setField(authService, "geocodingService", geocodingService);
+    }
 
     @Test
     void login_withValidCredentials_returnsAuthResponse() {
@@ -50,6 +59,7 @@ class AuthServiceTest {
                 .build();
 
         when(userRepository.findByEmail("testuser@example.com")).thenReturn(Optional.of(user));
+        when(clientRepository.findByEmail("testuser@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
         when(jwtProvider.generateToken("testuser")).thenReturn("jwt-token");
 
@@ -69,6 +79,7 @@ class AuthServiceTest {
     @Test
     void login_withUnknownEmail_throwsException() {
         when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
+        when(clientRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
         LoginRequest request = new LoginRequest();
         request.setEmail("unknown@example.com");
@@ -99,14 +110,13 @@ class AuthServiceTest {
         assertEquals("Invalid username or password", ex.getMessage());
     }
 
-    // ========================= REGISTER CLIENT =========================
-
     @Test
     void registerClient_withValidRequest_returnsAuthResponse() {
         Role role = Role.builder().name("ROLE_CLIENT").build();
         when(roleRepository.findByName("ROLE_CLIENT")).thenReturn(Optional.of(role));
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(clientRepository.save(any(Client.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtProvider.generateToken("newclient")).thenReturn("jwt-token");
 
         RegisterClientRequest request = new RegisterClientRequest();
@@ -135,14 +145,13 @@ class AuthServiceTest {
         assertThrows(RuntimeException.class, () -> authService.registerClient(request));
     }
 
-    // ========================= REGISTER COMPANY =========================
-
     @Test
     void registerCompany_withValidRequest_returnsAuthResponse() {
         Role role = Role.builder().name("ROLE_COMPANY").build();
         Company company = Company.builder().name("Test Co").build();
 
         when(roleRepository.findByName("ROLE_COMPANY")).thenReturn(Optional.of(role));
+        when(geocodingService.geocode(anyString())).thenReturn(new GeocodingResult(40.0, -74.0, true, null));
         when(companyRepository.save(any(Company.class))).thenReturn(company);
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
