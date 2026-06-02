@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable, map, take, filter, tap } from 'rxjs';
 
@@ -22,6 +22,7 @@ import * as BookingActions from '../../../booking/state/booking.actions';
 import * as AuthSelectors from '../../../auth/state/auth.selectors';
 import * as BookingSelectors from '../../../booking/state/booking.selectors';
 import { Booking } from '../../../booking/models/booking.model';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 type TabType = 'overview' | 'services' | 'bookings' | 'employees';
 
@@ -93,7 +94,10 @@ export class CompanyAdminDashboardComponent implements OnInit {
     this.initBookings();
   }
 
-  constructor(private store: Store) {
+  constructor(
+    private store: Store,
+    private notificationService: NotificationService,
+  ) {
     // store bindings
     this.company$ = this.store.select(CompanySelectors.selectCurrentCompany);
     this.services$ = this.store.select(CompanySelectors.selectCompanyServices);
@@ -173,7 +177,13 @@ export class CompanyAdminDashboardComponent implements OnInit {
     this.isServiceModalOpen = false;
   }
 
-  createService(): void {
+  createService(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete all required service fields.');
+      return;
+    }
+
     this.store.dispatch(
       CompanyActions.createCompanyService({ services: this.newService })
     );
@@ -190,7 +200,13 @@ export class CompanyAdminDashboardComponent implements OnInit {
     this.editingService = null;
   }
 
-  updateService(): void {
+  updateService(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete all required service fields.');
+      return;
+    }
+
     if (!this.editingService?.id) return;
 
     this.store.dispatch(
@@ -219,7 +235,13 @@ export class CompanyAdminDashboardComponent implements OnInit {
     this.isEmployeeModalOpen = false;
   }
 
-  createEmployee(): void {
+  createEmployee(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete all required employee fields.');
+      return;
+    }
+
     if (!this.companyId) return;
 
     this.store.dispatch(
@@ -242,7 +264,13 @@ export class CompanyAdminDashboardComponent implements OnInit {
     this.editingEmployee = null;
   }
 
-  updateEmployee(): void {
+  updateEmployee(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete all required employee fields.');
+      return;
+    }
+
     if (!this.editingEmployee?.id) return;
 
     this.store.dispatch(
@@ -286,6 +314,6 @@ export class CompanyAdminDashboardComponent implements OnInit {
   }
 
   updateBookingStatus(bookingId: string, status: string): void {
-    console.log('Updating booking status:', { bookingId, status });
+    this.notificationService.info(`Booking ${bookingId} status update to ${status} is not implemented yet.`);
   }
 }

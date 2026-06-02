@@ -10,6 +10,7 @@ import * as CompanySelectors from '../../state/company.selectors';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingFlowService } from '../../services/booking-flow.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-company-detail',
@@ -49,7 +50,8 @@ export class CompanyDetailComponent implements OnInit {
     private store: Store,
     private route: ActivatedRoute,
     private router: Router,
-    private bookingFlow: BookingFlowService
+    private bookingFlow: BookingFlowService,
+    private notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -134,7 +136,10 @@ export class CompanyDetailComponent implements OnInit {
   confirmBooking(): void {
     const company = this.bookingCompany();
     const serviceId = this.selectedService();
-    if (!company || !serviceId || !this.selectedDate() || !this.selectedTime()) return;
+    if (!company || !serviceId || !this.selectedDate() || !this.selectedTime()) {
+      this.notificationService.error('Please complete all booking fields before submitting.');
+      return;
+    }
 
     this.bookingLoading.set(true);
 
@@ -157,11 +162,13 @@ export class CompanyDetailComponent implements OnInit {
         next: () => {
           this.bookingLoading.set(false);
           this.bookingSuccess.set(true);
+          this.notificationService.success('Booking created successfully.');
         },
         error: (err) => {
-          console.error('Booking error:', err);
           this.bookingLoading.set(false);
-          alert(err?.message ?? 'Erreur lors de la réservation. Veuillez réessayer.');
+          this.notificationService.error(
+            err?.message ?? 'Erreur lors de la réservation. Veuillez réessayer.',
+          );
         },
       });
   }

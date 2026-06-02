@@ -8,12 +8,14 @@ import * as CompanyActions from '../../companies/state/company.actions';
 import * as ClientActions from '../../client/state/client.actions';
 import { AuthUser } from '../models/user.model';
 import { setToken, setRefreshToken, clearTokens } from '../utils/token-storage';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Injectable()
 export class AuthEffects {
   private actions$ = inject(Actions);
   private authApiService = inject(AuthApiService);
   private router = inject(Router);
+  private notificationService = inject(NotificationService);
 
   // ----------------------
   // LOGIN EFFECT
@@ -38,8 +40,6 @@ export class AuthEffects {
               email: res.email ?? '',
               role: userType,
             };
-            console.log('Login response:', res);
-            console.log('User created:', user);
             return AuthActions.loginSuccess({ user, accessToken: res.token ?? res.accessToken, userType });
           }),
           catchError((error) =>
@@ -62,6 +62,7 @@ export class AuthEffects {
       this.actions$.pipe(
         ofType(AuthActions.loginSuccess),
         tap(({ userType }) => {
+          this.notificationService.success('Login successful.');
           const routeMap: Record<string, string> = {
             client: '/client-dashboard',
             company: '/company-admin-dashboard',
@@ -114,6 +115,7 @@ export class AuthEffects {
             email: res.email ?? '',
             role: userType,
           };
+          this.notificationService.success('Registration successful.');
 
           return AuthActions.loginSuccess({
             user,
@@ -205,6 +207,19 @@ export class AuthEffects {
         )
       )
     )
+  );
+
+  authFailureNotifications$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          AuthActions.loginFailure,
+          AuthActions.registerFailure,
+          AuthActions.refreshTokenFailure,
+        ),
+        tap(({ error }) => this.notificationService.error(error || 'Authentication failed.')),
+      ),
+    { dispatch: false },
   );
 
   constructor() {}

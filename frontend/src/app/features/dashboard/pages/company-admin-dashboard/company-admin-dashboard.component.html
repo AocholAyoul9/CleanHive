@@ -168,23 +168,27 @@
         <div class="modal-overlay" (click)="closeServiceModal()"></div>
         <div class="modal-content">
           <h2>Ajouter un Service</h2>
-          <form #serviceForm="ngForm" (ngSubmit)="createService()">
+          <form #serviceForm="ngForm" (ngSubmit)="createService(serviceForm)">
             <div class="form-group">
               <label>Nom du Service</label>
               <input
                 type="text"
                 name="name"
+                #serviceName="ngModel"
                 [(ngModel)]="newService.name"
                 required
               />
+              <small class="error-message" *ngIf="serviceName.invalid && (serviceName.touched || serviceForm.submitted)">Service name is required.</small>
             </div>
             <div class="form-group">
               <label>Description</label>
               <textarea
                 name="description"
+                #serviceDescription="ngModel"
                 [(ngModel)]="newService.description"
                 required
               ></textarea>
+              <small class="error-message" *ngIf="serviceDescription.invalid && (serviceDescription.touched || serviceForm.submitted)">Description is required.</small>
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -192,20 +196,24 @@
                 <input
                   type="number"
                   name="basePrice"
+                  #servicePrice="ngModel"
                   min="1"
                   [(ngModel)]="newService.basePrice"
                   required
                 />
+                <small class="error-message" *ngIf="servicePrice.invalid && (servicePrice.touched || serviceForm.submitted)">Valid price is required.</small>
               </div>
               <div class="form-group">
                 <label>Durée (min)</label>
                 <input
                   type="number"
                   name="durationInMinutes"
+                  #serviceDuration="ngModel"
                   min="10"
                   [(ngModel)]="newService.durationInMinutes"
                   required
                 />
+                <small class="error-message" *ngIf="serviceDuration.invalid && (serviceDuration.touched || serviceForm.submitted)">Valid duration is required.</small>
               </div>
             </div>
             <div class="modal-actions">
@@ -233,7 +241,7 @@
         <div class="modal-overlay" (click)="closeEditServiceModal()"></div>
         <div class="modal-content">
           <h2>Modifier le Service</h2>
-          <form #editServiceForm="ngForm" (ngSubmit)="updateService()">
+          <form #editServiceForm="ngForm" (ngSubmit)="updateService(editServiceForm)">
             <div class="form-group">
               <label>Nom du Service</label>
               <input
@@ -412,24 +420,28 @@
         <div class="modal-overlay" (click)="closeEmployeeModal()"></div>
         <div class="modal-content">
           <h2>Ajouter un Employé</h2>
-          <form #employeeForm="ngForm" (ngSubmit)="createEmployee()">
+          <form #employeeForm="ngForm" (ngSubmit)="createEmployee(employeeForm)">
             <div class="form-group">
               <label>Nom Complet</label>
               <input
                 type="text"
                 name="name"
+                #employeeName="ngModel"
                 [(ngModel)]="newEmployee.name"
                 required
               />
+              <small class="error-message" *ngIf="employeeName.invalid && (employeeName.touched || employeeForm.submitted)">Employee name is required.</small>
             </div>
             <div class="form-group">
               <label>Email</label>
               <input
                 type="email"
                 name="email"
+                #employeeEmail="ngModel"
                 [(ngModel)]="newEmployee.email"
                 required
               />
+              <small class="error-message" *ngIf="employeeEmail.invalid && (employeeEmail.touched || employeeForm.submitted)">Valid email is required.</small>
             </div>
             <div class="form-group">
               <label>Password</label>
@@ -494,7 +506,7 @@
         <div class="modal-overlay" (click)="closeEditEmployeeModal()"></div>
         <div class="modal-content">
           <h2>Modifier l'Employé</h2>
-          <form #editEmployeeForm="ngForm" (ngSubmit)="updateEmployee()">
+          <form #editEmployeeForm="ngForm" (ngSubmit)="updateEmployee(editEmployeeForm)">
             <div class="form-group">
               <label>Nom Complet</label>
               <input

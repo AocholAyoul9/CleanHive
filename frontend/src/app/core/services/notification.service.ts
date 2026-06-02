@@ -1,31 +1,23 @@
 import { Injectable } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-
-type NoticeTone = 'success' | 'error' | 'info';
+import { ToastrService } from 'ngx-toastr';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  constructor(private snackBar: MatSnackBar) {}
-
-  show(message: string, tone: NoticeTone = 'info') {
-    this.snackBar.open(message, 'OK', {
-      duration: tone === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'top',
-      panelClass: [`np-snack-${tone}`],
-    });
-  }
+  constructor(private toastr: ToastrService) {}
 
   success(message: string) {
-    this.show(message, 'success');
+    this.toastr.success(message);
   }
 
   error(message: string) {
-    this.show(message, 'error');
+    this.toastr.error(message);
+  }
+
+  warning(message: string) {
+    this.toastr.warning(message);
   }
 
   info(message: string) {
-    this.show(message, 'info');
+    this.toastr.info(message);
   }
 }
-
