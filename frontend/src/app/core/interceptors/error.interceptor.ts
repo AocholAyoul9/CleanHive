@@ -31,18 +31,18 @@ function getErrorMessage(error: HttpErrorResponse): string {
     return backendMessage;
   }
 
-  switch (error.status) {
-    case 400:
-      return 'Bad request. Please verify your input.';
-    case 401:
-      return 'Authentication failed. Please sign in again.';
-    case 403:
-      return 'You are not authorized to perform this action.';
-    case 404:
-      return 'Requested resource was not found.';
-    case 500:
-      return 'Server error. Please try again later.';
-    default:
-      return error.message || 'An unexpected error occurred.';
-  }
+ switch (error.status) {
+  case 400:
+    return 'Requête invalide. Veuillez vérifier les informations saisies.';
+  case 401:
+    return 'Échec de l’authentification. Veuillez vous reconnecter.';
+  case 403:
+    return 'Vous n’êtes pas autorisé à effectuer cette action.';
+  case 404:
+    return 'La ressource demandée est introuvable.';
+  case 500:
+    return 'Erreur du serveur. Veuillez réessayer plus tard.';
+  default:
+    return error.message || 'Une erreur inattendue est survenue.';
+}
 }
