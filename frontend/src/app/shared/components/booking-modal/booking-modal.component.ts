@@ -4,6 +4,8 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
+  OnInit,
   Output,
   SimpleChanges,
   computed,
@@ -13,9 +15,10 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { Company } from '../../../features/companies/models/company.model';
-import { BookingFlowService } from '../../../features/companies/services/booking-flow.service';
+import { BookingApiService } from '../../../features/booking/services/booking.api';
 import { NearbyCompaniesService } from '../../services/nearby-companies.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-booking-modal',
@@ -24,8 +27,8 @@ import { NotificationService } from '../../../core/services/notification.service
   templateUrl: './booking-modal.component.html',
   styleUrl: './booking-modal.component.scss',
 })
-export class BookingModalComponent implements OnChanges {
-  private bookingFlow = inject(BookingFlowService);
+export class BookingModalComponent implements OnChanges, OnInit, OnDestroy {
+  private bookingApi = inject(BookingApiService);
   private nearbyService = inject(NearbyCompaniesService);
   private notificationService = inject(NotificationService);
 
@@ -35,7 +38,7 @@ export class BookingModalComponent implements OnChanges {
 
   @Output() closed = new EventEmitter<void>();
   @Output() bookingCompleted = new EventEmitter<void>();
-
+  
   selectedService = signal<string>('');
   selectedDate = signal<string>('');
   selectedTime = signal<string>('');
@@ -44,9 +47,6 @@ export class BookingModalComponent implements OnChanges {
   bookingStep = signal<number>(1);
 
   bookingForm = {
-    fullName: '',
-    email: '',
-    phone: '',
     address: '',
     propertyType: 'apartment',
     rooms: '2',
@@ -64,6 +64,10 @@ export class BookingModalComponent implements OnChanges {
   ];
 
   todayDate = computed(() => new Date().toISOString().split('T')[0]);
+  
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['open'] || changes['company']) && this.open && this.company) {
@@ -71,60 +75,75 @@ export class BookingModalComponent implements OnChanges {
     }
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   closeBookingModal(): void {
     this.closed.emit();
   }
 
   nextBookingStep(): void {
-    if (this.bookingStep() < 3) this.bookingStep.update((value) => value + 1);
+    if (this.bookingStep() < 3) {
+      this.bookingStep.update((value) => value + 1);
+    }
   }
 
   prevBookingStep(): void {
-    if (this.bookingStep() > 1) this.bookingStep.update((value) => value - 1);
+    if (this.bookingStep() > 1) {
+      this.bookingStep.update((value) => value - 1);
+    }
   }
 
   confirmBooking(): void {
     if (!this.company || !this.selectedService() || !this.selectedDate() || !this.selectedTime()) {
-      this.notificationService.error('Please complete all booking fields before submitting.');
+      this.notificationService.error('Veuillez compléter tous les champs avant de réserver.');
+      return;
+    }
+
+    if (!this.bookingForm.address) {
+      this.notificationService.error('Veuillez indiquer l\'adresse du service.');
       return;
     }
 
     this.bookingLoading.set(true);
 
-    this.bookingFlow
-      .createBookingWithClient(
-        this.company.id,
-        {
-          serviceId: this.selectedService(),
-          address: this.bookingForm.address,
-          startTime: `${this.selectedDate()}T${this.selectedTime()}:00`,
-          price: 0,
-        },
-      )
-      .subscribe({
-        next: () => {
-          this.bookingLoading.set(false);
-          this.bookingSuccess.set(true);
-          this.bookingCompleted.emit();
-        },
-        error: (error: any) => {
-          this.bookingLoading.set(false);
+    const service = this.getServiceById(this.selectedService());
+    const price = service?.basePrice || 0;
+    
+    // Combine date and time into ISO format
+    const startTime = `${this.selectedDate()}T${this.selectedTime()}:00`;
 
-          const status =
-            error?.status ||
-            error?.cause?.status;
+    const bookingRequest = {
+      serviceId: this.selectedService(),
+      startTime: startTime,
+      address: this.bookingForm.address,
+      price: price,
+    };
 
-          if (status === 401 || status === 403) {
-            this.notificationService.error('Vous devez être connecté pour réserver un service.');
-            return;
-          }
+    this.bookingApi.createBooking(this.company.id, bookingRequest).subscribe({
+      next: (booking) => {
+        this.bookingLoading.set(false);
+        this.bookingSuccess.set(true);
+        this.bookingCompleted.emit();
+        this.notificationService.success('Réservation confirmée avec succès !');
+      },
+      error: (error: any) => {
+        this.bookingLoading.set(false);
 
-          this.notificationService.error(
-            error?.message ||
-            'Erreur lors de la réservation. Veuillez réessayer.'
-          );
+        const status = error?.status;
+
+        if (status === 401 || status === 403) {
+          this.notificationService.error('Vous devez être connecté pour réserver un service.');
+          return;
         }
-      });
+
+        this.notificationService.error(
+          error?.error?.message || 'Erreur lors de la réservation. Veuillez réessayer.'
+        );
+      }
+    });
   }
 
   getInitials(name: string | null | undefined): string {
@@ -135,8 +154,26 @@ export class BookingModalComponent implements OnChanges {
     return company.services ?? [];
   }
 
+  getServiceById(serviceId: string) {
+    return this.company?.services?.find((service) => service.id === serviceId);
+  }
+
   getServiceName(serviceId: string): string {
-    return this.company?.services?.find((service) => service.id === serviceId)?.name ?? '';
+    return this.getServiceById(serviceId)?.name ?? '';
+  }
+
+  getServicePrice(serviceId: string): number {
+    return this.getServiceById(serviceId)?.basePrice ?? 0;
+  }
+
+  getPropertyTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      apartment: 'Appartement',
+      house: 'Maison',
+      studio: 'Studio',
+      office: 'Bureau',
+    };
+    return labels[type] || type;
   }
 
   private resetForm(): void {
@@ -147,9 +184,6 @@ export class BookingModalComponent implements OnChanges {
     this.bookingLoading.set(false);
     this.bookingStep.set(1);
     this.bookingForm = {
-      fullName: '',
-      email: '',
-      phone: '',
       address: this.initialAddress || '',
       propertyType: 'apartment',
       rooms: '2',
