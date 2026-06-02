@@ -152,12 +152,7 @@ export class CompanyDetailComponent implements OnInit {
     };
 
     this.bookingFlow
-      .createBookingWithClient(company.id, bookingRequest, {
-        fullName: this.bookingForm.fullName,
-        email: this.bookingForm.email,
-        phone: this.bookingForm.phone,
-        address: this.bookingForm.address,
-      })
+      .createBookingWithClient(company.id, bookingRequest)
       .subscribe({
         next: () => {
           this.bookingLoading.set(false);

@@ -13,10 +13,12 @@ import com.shawilTech.netproxi.dto.RegisterClientRequest;
 import com.shawilTech.netproxi.dto.RegisterCompanyRequest;
 import com.shawilTech.netproxi.entity.Client;
 import com.shawilTech.netproxi.entity.Company;
+import com.shawilTech.netproxi.entity.Employee;
 import com.shawilTech.netproxi.entity.Role;
 import com.shawilTech.netproxi.entity.User;
 import com.shawilTech.netproxi.repository.ClientRepository;
 import com.shawilTech.netproxi.repository.CompanyRepository;
+import com.shawilTech.netproxi.repository.EmployeeRepository;
 import com.shawilTech.netproxi.repository.RoleRepository;
 import com.shawilTech.netproxi.repository.UserRepository;
 import com.shawilTech.netproxi.security.JwtTokenProvider;
@@ -35,6 +37,7 @@ public class AuthService {
         private final RoleRepository roleRepository;
         private final CompanyRepository companyRepository;
         private final ClientRepository clientRepository;
+        private final EmployeeRepository employeeRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtProvider;
 
@@ -48,20 +51,46 @@ public class AuthService {
          */
         public AuthResponse login(LoginRequest request) {
 
-                // Try to find User first
-                User user = userRepository.findByEmail(request.getEmail()).orElse(null);
                 String passwordToMatch = null;
                 String username = null;
+                UUID id = null;
+                UUID companyId = null;
+                List<String> roles = Collections.emptyList();
+                String role = null;
                 
-                if (user != null) {
-                        passwordToMatch = user.getPassword();
-                        username = user.getUsername();
-                } else {
-                        // Try to find Client for client login
+                if (request.getUserType() == null || "company".equalsIgnoreCase(request.getUserType())) {
+                        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+                        if (user != null) {
+                                passwordToMatch = user.getPassword();
+                                username = user.getUsername();
+                                id = user.getId();
+                                companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+                                roles = user.getRoles() == null ? Collections.emptyList()
+                                                : user.getRoles().stream().map(Role::getName).collect(Collectors.toList());
+                                if (!roles.isEmpty()) role = roles.get(0);
+                        }
+                }
+                
+                if (passwordToMatch == null && (request.getUserType() == null || "client".equalsIgnoreCase(request.getUserType()))) {
                         Client client = clientRepository.findByEmail(request.getEmail()).orElse(null);
                         if (client != null) {
                                 passwordToMatch = client.getPassword();
                                 username = client.getEmail();
+                                id = client.getId();
+                                roles = List.of("ROLE_CLIENT");
+                                role = "CLIENT";
+                        }
+                }
+                
+                if (passwordToMatch == null && (request.getUserType() == null || "employee".equalsIgnoreCase(request.getUserType()))) {
+                        Employee employee = employeeRepository.findByEmail(request.getEmail()).orElse(null);
+                        if (employee != null) {
+                                passwordToMatch = employee.getPassword();
+                                username = employee.getEmail();
+                                id = employee.getId();
+                                companyId = employee.getCompany() != null ? employee.getCompany().getId() : null;
+                                roles = List.of("ROLE_EMPLOYEE");
+                                role = "EMPLOYEE";
                         }
                 }
                 
@@ -70,39 +99,21 @@ public class AuthService {
                 }
 
                 System.out.println("Login attempt: " + request.getEmail());
-                System.out.println("Password to match: " + passwordToMatch);
                 if (!passwordEncoder.matches(request.getPassword(), passwordToMatch)) {
                         throw new RuntimeException("Invalid username or password");
                 }
 
                 String token = jwtProvider.generateToken(username);
 
-                // Determine if this is a client login
-                Client clientEntity = clientRepository.findByEmail(request.getEmail()).orElse(null);
-                if (clientEntity != null) {
-                        return AuthResponse.builder()
-                                        .token(token)
-                                        .accessToken(token)
-                                        .username(username)
-                                        .email(request.getEmail())
-                                        .role("CLIENT")
-                                        .roles(List.of("ROLE_CLIENT"))
-                                        .id(clientEntity.getId())
-                                        .message("Login successful!")
-                                        .build();
-                }
-
-                List<String> roles = user.getRoles() == null ? Collections.emptyList()
-                                : user.getRoles().stream().map(Role::getName).collect(Collectors.toList());
-
                 return AuthResponse.builder()
                                 .token(token)
                                 .accessToken(token)
-                                .username(user.getUsername())
-                                .email(user.getEmail())
-                                .role(roles.isEmpty() ? null : roles.get(0))
+                                .username(username)
+                                .email(request.getEmail())
+                                .role(role)
                                 .roles(roles)
-                                .companyId(user.getCompany() != null ? user.getCompany().getId() : null)
+                                .companyId(companyId)
+                                .id(id)
                                 .message("Login successful!")
                                 .build();
         }

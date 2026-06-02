@@ -34,6 +34,8 @@ class AuthServiceTest {
     @Mock
     private ClientRepository clientRepository;
     @Mock
+    private EmployeeRepository employeeRepository;
+    @Mock
     private NominatimGeocodingService geocodingService;
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -59,7 +61,6 @@ class AuthServiceTest {
                 .build();
 
         when(userRepository.findByEmail("testuser@example.com")).thenReturn(Optional.of(user));
-        when(clientRepository.findByEmail("testuser@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
         when(jwtProvider.generateToken("testuser")).thenReturn("jwt-token");
 

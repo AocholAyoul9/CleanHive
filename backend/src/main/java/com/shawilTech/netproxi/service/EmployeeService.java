@@ -8,6 +8,7 @@ import com.shawilTech.netproxi.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,8 @@ public class EmployeeService {
         private final JwtTokenProvider jwtProvider;
         private final UserRepository userRepository;
         private final CompanyRepository companyRepository;
+        private final RoleRepository roleRepository;
+        private final PasswordEncoder passwordEncoder;
 
         // ---------------- HELPER ----------------
 
@@ -62,17 +65,35 @@ public class EmployeeService {
                         password = UUID.randomUUID().toString().substring(0, 8); // Generate simple password
                 }
 
+                Role employeeRole = roleRepository.findByName("ROLE_EMPLOYEE")
+                                .orElseThrow(() -> new RuntimeException("Role ROLE_EMPLOYEE not found"));
+
                 Employee employee = Employee.builder()
                                 .name(dto.getName())
                                 .email(dto.getEmail())
-                                .password(password)
+                                .password(passwordEncoder.encode(password))
                                 .phone(dto.getPhone())
                                 .address(dto.getAddress())
                                 .company(company)
                                 .active(true)
                                 .build();
 
-                return toResponseDto(employeeRepository.save(employee));
+                Employee savedEmployee = employeeRepository.save(employee);
+
+                User employeeUser = User.builder()
+                                .username(dto.getName())
+                                .email(dto.getEmail())
+                                .password(passwordEncoder.encode(password))
+                                .phone(dto.getPhone())
+                                .address(dto.getAddress())
+                                .enabled(true)
+                                .company(company)
+                                .roles(Collections.singleton(employeeRole))
+                                .build();
+
+                userRepository.save(employeeUser);
+
+                return toResponseDto(savedEmployee);
         }
 
         @Transactional(readOnly = true)
@@ -107,33 +128,47 @@ public class EmployeeService {
                 subscriptionRepository.findByCompanyAndActiveTrue(company)
                                 .orElseThrow(() -> new RuntimeException("No active subscription found"));
 
+                if (dto.getName() == null || dto.getName().isBlank()) {
+                        throw new RuntimeException("Employee name is required");
+                }
+                if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+                        throw new RuntimeException("Employee email is required");
+                }
+
+                String password = dto.getPassword();
+                if (password == null || password.isBlank()) {
+                        password = UUID.randomUUID().toString().substring(0, 8);
+                }
+
                 Employee employee = Employee.builder()
                                 .name(dto.getName())
                                 .email(dto.getEmail())
-                                .password(dto.getPassword())
+                                .password(passwordEncoder.encode(password))
                                 .phone(dto.getPhone())
                                 .address(dto.getAddress())
                                 .company(company)
                                 .active(true)
                                 .build();
 
-                return toResponseDto(employeeRepository.save(employee));
-        }
+                Employee savedEmployee = employeeRepository.save(employee);
 
-        public EmployeeResponseDto employeeLogin(EmployeeLoginRequestDto dto) {
-                Employee employee = employeeRepository.findByEmail(dto.getEmail())
-                                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                Role employeeRole = roleRepository.findByName("ROLE_EMPLOYEE")
+                                .orElseThrow(() -> new RuntimeException("Role ROLE_EMPLOYEE not found"));
 
-                if (!employee.getPassword().equals(dto.getPassword())) {
-                        throw new RuntimeException("Invalid email or password");
-                }
+                User employeeUser = User.builder()
+                                .username(dto.getName())
+                                .email(dto.getEmail())
+                                .password(passwordEncoder.encode(password))
+                                .phone(dto.getPhone())
+                                .address(dto.getAddress())
+                                .enabled(true)
+                                .company(company)
+                                .roles(Collections.singleton(employeeRole))
+                                .build();
 
-                String token = jwtProvider.generateToken(dto.getEmail());
-                employee.setToken(token);
+                userRepository.save(employeeUser);
 
-                employeeRepository.save(employee);
-
-                return toResponseDto(employee);
+                return toResponseDto(savedEmployee);
         }
 
         @Transactional(readOnly = true)

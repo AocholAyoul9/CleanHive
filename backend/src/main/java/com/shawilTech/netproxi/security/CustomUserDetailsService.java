@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.shawilTech.netproxi.entity.Client;
+import com.shawilTech.netproxi.entity.Employee;
 import com.shawilTech.netproxi.entity.Role;
 import com.shawilTech.netproxi.entity.User;
 import com.shawilTech.netproxi.repository.ClientRepository;
+import com.shawilTech.netproxi.repository.EmployeeRepository;
 import com.shawilTech.netproxi.repository.UserRepository;
 
 import java.util.Collections;
@@ -22,13 +24,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail)
             throws UsernameNotFoundException {
 
-        // First try to find a User
+        Employee employee = employeeRepository.findByEmail(usernameOrEmail).orElse(null);
+        if (employee != null) {
+            return new EmployeePrincipal(employee);
+        }
+
         User user = userRepository.findByUsername(usernameOrEmail)
                 .or(() -> userRepository.findByEmail(usernameOrEmail))
                 .orElse(null);
@@ -45,7 +52,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             return new CustomUserDetails(user);
         }
 
-        // If not found, try to find a Client
         Client client = clientRepository.findByEmail(usernameOrEmail).orElse(null);
         if (client != null) {
             return new ClientPrincipal(client);
