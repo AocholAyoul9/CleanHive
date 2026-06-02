@@ -33,7 +33,7 @@
         <label>Mot de passe</label>
         <div class="password-wrapper">
           <input [type]="showPassword ? 'text' : 'password'"
-                 #******
+                 #password="ngModel"
                  [(ngModel)]="formData.password"
                  name="password"
                  required />

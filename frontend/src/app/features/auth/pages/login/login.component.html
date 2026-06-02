@@ -25,7 +25,7 @@
 
       <div class="form-group">
         <label>Mot de passe</label>
-        <input type="password" #****** [(ngModel)]="loginData.password" name="password" required />
+        <input type="password" #password="ngModel" [(ngModel)]="loginData.password" name="password" required />
         <small class="error-message" *ngIf="password.invalid && (password.touched || loginForm.submitted)">Password is required.</small>
       </div>
 
