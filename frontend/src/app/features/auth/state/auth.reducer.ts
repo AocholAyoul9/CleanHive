@@ -46,6 +46,25 @@ export const authFeature = createFeature({
       error,
       loading: false,
     })),
+    on(AuthActions.restoreSession, (state) => ({
+      ...state,
+      loading: true,
+      error: null,
+    })),
+    on(AuthActions.restoreSessionSuccess, (state, { user, accessToken, refreshToken, userType }) => ({
+      ...state,
+      user,
+      accessToken,
+      refreshToken,
+      userType,
+      loading: false,
+      error: null,
+    })),
+    on(AuthActions.restoreSessionFailure, (state, { error }) => ({
+      ...state,
+      error,
+      loading: false,
+    })),
 
     // ----------------------
     // REGISTER

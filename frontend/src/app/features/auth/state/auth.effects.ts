@@ -1,14 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Router } from '@angular/router';
+import { ROOT_EFFECTS_INIT } from '@ngrx/effects';
 import { catchError, map, mergeMap, of, tap } from 'rxjs';
 import { AuthApiService } from '../services/auth.api.service';
 import * as AuthActions from './auth.actions';
 import * as CompanyActions from '../../companies/state/company.actions';
 import * as ClientActions from '../../client/state/client.actions';
 import { AuthUser } from '../models/user.model';
-import { setToken, setRefreshToken, clearTokens } from '../utils/token-storage';
 import { NotificationService } from '../../../core/services/notification.service';
+import { clearTokens, getRefreshToken, getToken, setRefreshToken, setToken } from '../utils/token-storage';
 
 @Injectable()
 export class AuthEffects {
@@ -16,6 +17,48 @@ export class AuthEffects {
   private authApiService = inject(AuthApiService);
   private router = inject(Router);
   private notificationService = inject(NotificationService);
+
+  restoreSessionOnInit$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ROOT_EFFECTS_INIT),
+      map(() => AuthActions.restoreSession())
+    )
+  );
+
+  restoreSession$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.restoreSession),
+      map(() => {
+        const token = getToken();
+        const userType = this.getStoredUserType();
+        if (!token || !userType) {
+          return AuthActions.restoreSessionFailure({ error: 'No stored session found' });
+        }
+
+        const storedUser = this.getStoredUser(userType);
+        const user: AuthUser = {
+          id: storedUser?.id ?? storedUser?.companyId ?? '',
+          name: storedUser?.name ?? storedUser?.username ?? '',
+          email: storedUser?.email ?? '',
+          role: userType,
+        };
+
+        return AuthActions.restoreSessionSuccess({
+          user,
+          accessToken: token,
+          refreshToken: getRefreshToken(),
+          userType,
+        });
+      }),
+      catchError((error) =>
+        of(
+          AuthActions.restoreSessionFailure({
+            error: error?.message ?? 'Failed to restore session',
+          })
+        )
+      )
+    )
+  );
 
   // ----------------------
   // LOGIN EFFECT
@@ -81,7 +124,7 @@ export class AuthEffects {
   // Load client reservations after client login
   loadClientReservationsOnLogin$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AuthActions.loginSuccess),
+      ofType(AuthActions.loginSuccess, AuthActions.restoreSessionSuccess),
       mergeMap(({ userType }) => {
         if (userType === 'client') {
           return of(
@@ -171,7 +214,7 @@ export class AuthEffects {
   // ----------------------
   loadCompanyDataOnLogin$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AuthActions.loginSuccess),
+      ofType(AuthActions.loginSuccess, AuthActions.restoreSessionSuccess),
       mergeMap(({ user, userType }) => {
         if (userType === 'company') {
           return of(
@@ -221,6 +264,33 @@ export class AuthEffects {
       ),
     { dispatch: false },
   );
+  private getStoredUserType(): 'client' | 'company' | 'employee' | null {
+    if (typeof window === 'undefined') return null;
+    const explicitUserType = localStorage.getItem('userType');
+    if (
+      explicitUserType === 'client' ||
+      explicitUserType === 'company' ||
+      explicitUserType === 'employee'
+    ) {
+      return explicitUserType;
+    }
+
+    if (localStorage.getItem('client')) return 'client';
+    if (localStorage.getItem('company')) return 'company';
+    if (localStorage.getItem('employee')) return 'employee';
+    return null;
+  }
+
+  private getStoredUser(userType: 'client' | 'company' | 'employee'): any {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(userType);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
 
   constructor() {}
 }
