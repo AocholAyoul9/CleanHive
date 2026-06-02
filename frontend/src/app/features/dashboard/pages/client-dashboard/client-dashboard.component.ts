@@ -276,6 +276,10 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.bookingModalOpen.set(false);
   }
 
+  onBookingCompleted(): void {
+    this.store.dispatch(ClientActions.loadClientReservations());
+  }
+
   openReviewModal(reservation: Booking): void {
     this.selectedReservation = reservation;
     this.reviewForm.patchValue({
