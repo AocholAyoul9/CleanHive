@@ -103,19 +103,22 @@
     <form class="signup-form" #proForm="ngForm" (ngSubmit)="submitProForm(proForm)">
       <div class="form-group">
         <label for="companyName">Nom de l’entreprise *</label>
-        <input type="text" id="companyName" name="companyName" [(ngModel)]="proData.companyName" required
+        <input type="text" id="companyName" name="companyName" #companyName="ngModel" [(ngModel)]="proData.companyName" required
           placeholder="Ex: Clean Pro Services">
+        <small class="error-message" *ngIf="companyName.invalid && (companyName.touched || proForm.submitted)">Le nom de l’entreprise est requis.</small>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label for="contactName">Votre nom *</label>
-          <input type="text" id="contactName" name="contactName" [(ngModel)]="proData.contactName" required
+          <input type="text" id="contactName" name="contactName" #contactName="ngModel" [(ngModel)]="proData.contactName" required
             placeholder="Jean Dupont">
+          <small class="error-message" *ngIf="contactName.invalid && (contactName.touched || proForm.submitted)">Votre nom est requis.</small>
         </div>
         <div class="form-group">
           <label for="email">Email professionnel *</label>
-          <input type="email" id="email" name="email" [(ngModel)]="proData.email" required email
+          <input type="email" id="email" name="email" #email="ngModel" [(ngModel)]="proData.email" required email
             placeholder="contact@cleanpro.fr">
+          <small class="error-message" *ngIf="email.invalid && (email.touched || proForm.submitted)">Un email valide est requis.</small>
         </div>
       </div>
       <div class="form-group">

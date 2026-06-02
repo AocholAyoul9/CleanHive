@@ -17,6 +17,8 @@ import {
   withFetch,
   withInterceptors,
 } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideToastr } from 'ngx-toastr';
 
 import { provideStore, provideState } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
@@ -32,6 +34,7 @@ import { clientReducer } from './features/client/state/client.reducer';
 import { employeeReducer } from './features/employee/state/employee.reducer';
 import { EmployeeEffects } from './features/employee/state/employee.effects';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 
 
 export const appConfig: ApplicationConfig = {
@@ -39,8 +42,15 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
+    provideAnimations(),
+    provideToastr({
+      positionClass: 'toast-top-right',
+      timeOut: 3000,
+      progressBar: true,
+      preventDuplicates: true,
+    }),
 
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
 
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
 

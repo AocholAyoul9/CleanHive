@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import * as EmployeeActions from './employee.actions';
 import { ApiService } from '../../../core/api.service';
 import { clearTokens } from '../../../features/auth/utils/token-storage';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Injectable()
 export class EmployeeEffects {
@@ -28,6 +29,7 @@ updateAvailability$;
 loadEmployeeDataAfterProfileSuccess$;
 refreshAfterTaskUpdate$;
 handleErrors$;
+handleSuccesses$;
 handleLogout$;
 startTask$;
 completeTask$;
@@ -37,7 +39,8 @@ initializeEmployeeDashboard$;
   constructor(
     private actions$: Actions,
     private apiService: ApiService,
-    private store: Store
+    private store: Store,
+    private notificationService: NotificationService,
   ) {
 
   // Charger le profil de l'employé
@@ -304,12 +307,31 @@ initializeEmployeeDashboard$;
         EmployeeActions.updateAvailabilityFailure
       ),
       tap(({ error }) => {
-        console.error('Erreur employé:', error);
-        // Ici vous pourriez afficher une notification toast
-        // this.notificationService.showError(error);
+        this.notificationService.error(error || 'Employee request failed.');
       })
     ),
     { dispatch: false }
+  );
+
+  this.handleSuccesses$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          EmployeeActions.updateEmployeeProfileSuccess,
+          EmployeeActions.updateTaskStatusSuccess,
+          EmployeeActions.updateAvailabilitySuccess,
+        ),
+        tap((action) => {
+          if (action.type.includes('Update Profile Success')) {
+            this.notificationService.success('Profile updated successfully.');
+          } else if (action.type.includes('Update Task Status Success')) {
+            this.notificationService.success('Task status updated successfully.');
+          } else {
+            this.notificationService.success('Availability updated successfully.');
+          }
+        }),
+      ),
+    { dispatch: false },
   );
 
   // Effet pour gérer la déconnexion
@@ -397,24 +419,3 @@ initializeEmployeeDashboard$;
     )
   );
 }}
-
-// Service de notification (optionnel)
-@Injectable({
-  providedIn: 'root'
-})
-export class EmployeeNotificationService {
-  showSuccess(message: string): void {
-    // Implémentez votre logique de notification ici
-    console.log('Success:', message);
-  }
-  
-  showError(message: string): void {
-    // Implémentez votre logique de notification ici
-    console.error('Error:', message);
-  }
-  
-  showInfo(message: string): void {
-    // Implémentez votre logique de notification ici
-    console.info('Info:', message);
-  }
-}

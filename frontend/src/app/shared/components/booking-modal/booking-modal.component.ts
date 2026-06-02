@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { Company } from '../../../features/companies/models/company.model';
 import { BookingFlowService } from '../../../features/companies/services/booking-flow.service';
 import { NearbyCompaniesService } from '../../services/nearby-companies.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-booking-modal',
@@ -26,6 +27,7 @@ import { NearbyCompaniesService } from '../../services/nearby-companies.service'
 export class BookingModalComponent implements OnChanges {
   private bookingFlow = inject(BookingFlowService);
   private nearbyService = inject(NearbyCompaniesService);
+  private notificationService = inject(NotificationService);
 
   @Input() open = false;
   @Input() company: Company | null = null;
@@ -64,19 +66,12 @@ export class BookingModalComponent implements OnChanges {
   todayDate = computed(() => new Date().toISOString().split('T')[0]);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['open'] || changes['company']) {
-      console.log('[BookingModal] inputs changed', {
-        open: this.open,
-        companyId: this.company?.id ?? null,
-      });
-    }
     if ((changes['open'] || changes['company']) && this.open && this.company) {
       this.resetForm();
     }
   }
 
   closeBookingModal(): void {
-    console.log('[BookingModal] close emitted');
     this.closed.emit();
   }
 
@@ -90,6 +85,7 @@ export class BookingModalComponent implements OnChanges {
 
   confirmBooking(): void {
     if (!this.company || !this.selectedService() || !this.selectedDate() || !this.selectedTime()) {
+      this.notificationService.error('Please complete all booking fields before submitting.');
       return;
     }
 
@@ -125,11 +121,11 @@ export class BookingModalComponent implements OnChanges {
             error?.cause?.status;
 
           if (status === 401 || status === 403) {
-            alert('Vous devez être connecté pour réserver un service.');
+            this.notificationService.error('Vous devez être connecté pour réserver un service.');
             return;
           }
 
-          alert(
+          this.notificationService.error(
             error?.message ||
             'Erreur lors de la réservation. Veuillez réessayer.'
           );

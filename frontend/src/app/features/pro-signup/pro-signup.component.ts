@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';   // for template-driven form
 import { RouterModule } from '@angular/router';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-pro-signup',
@@ -11,6 +12,7 @@ import { RouterModule } from '@angular/router';
   styleUrls: ['./pro-signup.component.scss']
 })
 export class ProSignupComponent {
+  constructor(private notificationService: NotificationService) {}
   // Form data
   proData = {
     companyName: '',
@@ -95,13 +97,19 @@ export class ProSignupComponent {
   ];
 
   submitProForm(form: NgForm): void {
-    if (form.invalid) return;
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete all required fields.');
+      return;
+    }
 
     this.submitting.set(true);
 
     // Simulate API call
     setTimeout(() => {
-      alert('Votre candidature a bien été envoyée ! Nous vous recontacterons sous 48h.');
+      this.notificationService.success(
+        'Votre candidature a bien été envoyée ! Nous vous recontacterons sous 48h.',
+      );
       this.submitting.set(false);
       form.resetForm();
       // OR this.router.navigate(['/pro/confirmation']);

@@ -12,6 +12,7 @@ import {
 import { CompanyMapComponent } from '../../../../shared/components/company-map/company-map.component';
 import { CompanyCardsComponent } from '../../../../shared/components/company-cards/company-cards.component';
 import { BookingModalComponent } from '../../../../shared/components/booking-modal/booking-modal.component';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 type SortMode = 'distance' | 'rating' | 'available';
 
@@ -30,6 +31,7 @@ type SortMode = 'distance' | 'rating' | 'available';
 })
 export class NearbyCompaniesComponent implements OnInit, OnDestroy {
   private nearbyService = inject(NearbyCompaniesService);
+  private notificationService = inject(NotificationService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
@@ -56,7 +58,6 @@ export class NearbyCompaniesComponent implements OnInit, OnDestroy {
 sortedCompanies: Company[] = [];
 
   ngOnInit(): void {
-    console.log('[NearbyCompanies] init');
     this.setupSearchSubscription();
     this.loadInitialCompanies();
   }
@@ -111,7 +112,9 @@ sortedCompanies: Company[] = [];
       const address = await this.nearbyService.reverseGeocode(location.lat, location.lng);
       if (address) this.searchQuery = address;
     } catch {
-      alert("Impossible d'obtenir votre position. Veuillez saisir votre adresse manuellement.");
+      this.notificationService.error(
+        "Impossible d'obtenir votre position. Veuillez saisir votre adresse manuellement.",
+      );
     } finally {
       this.geolocationLoading.set(false);
     }
@@ -132,7 +135,6 @@ setSortBy(mode: SortMode): void {
   }
 
   selectCompany(company: Company): void {
-    console.log('[NearbyCompanies] selectCompany', company.id);
     this.selectedCompany.set(company);
   }
 
@@ -149,19 +151,13 @@ setSortBy(mode: SortMode): void {
   }
 
   bookCompany(company: Company): void {
-    console.log('[NearbyCompanies] open booking modal', company.id);
     this.bookingCompany.set(company);
     this.bookingModalOpen.set(true);
-    console.log('[NearbyCompanies] modal state', {
-      open: this.bookingModalOpen(),
-      bookingCompanyId: this.bookingCompany()?.id ?? null,
-    });
   }
 
   closeBookingModal(): void {
     this.bookingModalOpen.set(false);
     this.bookingCompany.set(null);
-    console.log('[NearbyCompanies] close booking modal');
   }
 
   trackByCompanyId(_: number, company: Company): string {
@@ -193,10 +189,6 @@ private updateSortedCompanies(): void {
 
   this.sortedCompanies = list;
 
-  console.log(
-    '[NearbyCompanies] sortedCompanies updated',
-    this.sortedCompanies.length,
-  );
 }
   private setupSearchSubscription(): void {
     this.searchSubject
@@ -281,7 +273,7 @@ this.updateSortedCompanies();
           this.loading.set(false);
         },
         error: () => {
-          console.error('[NearbyCompanies] failed loading companies');
+          this.notificationService.error('Failed loading nearby companies.');
           this.loading.set(false);
         },
       });
