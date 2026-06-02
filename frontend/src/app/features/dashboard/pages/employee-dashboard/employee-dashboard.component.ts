@@ -16,7 +16,7 @@ import { EmployeeTask, EmployeeNotification } from '../../../employee/models/emp
   templateUrl: './employee-dashboard.component.html',
   styleUrls: ['./employee-dashboard.component.scss']
 })
-export class EmployeeDashboardComponent implements /*OnInit*/ OnDestroy {
+export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   // Observables
   employeeProfile$: Observable<any>;
   todayTasks$: Observable<EmployeeTask[]>;

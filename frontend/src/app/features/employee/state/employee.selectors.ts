@@ -53,11 +53,9 @@ export const selectUpcomingTasks = createSelector(
   selectEmployeeTasks,
   (tasks) => {
     const now = new Date();
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
     return tasks.filter(task => {
       const taskDate = new Date(task.startTime);
-      return taskDate > now && taskDate <= weekFromNow && task.status !== 'COMPLETED';
+      return taskDate > now && task.status !== 'COMPLETED' && task.status !== 'CANCELLED';
     }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
   }
 );

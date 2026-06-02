@@ -2,7 +2,6 @@ package com.shawilTech.netproxi.controller;
 
 import com.shawilTech.netproxi.dto.*;
 import com.shawilTech.netproxi.service.EmployeeDashboardService;
-import com.shawilTech.netproxi.service.EmployeeService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,19 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/employee")
+@RequestMapping({"/api/employee", "/api/companies/employees"})
 @RequiredArgsConstructor
 public class EmployeeDashboardController {
 
     private final EmployeeDashboardService dashboardService;
-    private final EmployeeService employeeService; // only for login
-
-    // 0. Employee login (stays in EmployeeService)
-    @PostMapping("/login")
-    public ResponseEntity<EmployeeResponseDto> employeeLogin(
-            @RequestBody EmployeeLoginRequestDto loginRequestDto) {
-        return ResponseEntity.ok(employeeService.employeeLogin(loginRequestDto));
-    }
 
     //  1. Profile
     @GetMapping("/profile")

@@ -100,12 +100,6 @@ export class BookingModalComponent implements OnChanges {
           startTime: `${this.selectedDate()}T${this.selectedTime()}:00`,
           price: 0,
         },
-        {
-          fullName: this.bookingForm.fullName,
-          email: this.bookingForm.email,
-          phone: this.bookingForm.phone,
-          address: this.bookingForm.address,
-        },
       )
       .subscribe({
         next: () => {
