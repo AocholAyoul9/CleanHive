@@ -39,8 +39,8 @@ export interface Booking {
 
 
 export interface CreateBookingRequest {
-  serviceId: string;    // ID of the selected service
-  startTime: string;    // ISO string of the booking start time
-  address: string;      // Address for the booking
+  serviceId: string;    
+  startTime: string;    
+  address: string;   
   price?: number;
 }

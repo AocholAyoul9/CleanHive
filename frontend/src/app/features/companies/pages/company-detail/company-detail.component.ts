@@ -11,11 +11,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingFlowService } from '../../services/booking-flow.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { BookingModalComponent } from '../../../../shared/components/booking-modal/booking-modal.component';
 
 @Component({
   selector: 'app-company-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BookingModalComponent],
   templateUrl: './company-detail.component.html',
   styleUrls: ['./company-detail.component.scss']
 })
@@ -35,6 +36,9 @@ export class CompanyDetailComponent implements OnInit {
   bookingLoading = signal(false);
   bookingStep = signal(1);
   
+
+    searchQuery = '';
+
   bookingForm = {
     fullName: '',
     email: '',
