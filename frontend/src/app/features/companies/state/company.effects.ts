@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, mergeMap, of } from 'rxjs';
+import { catchError, map, mergeMap, of, tap } from 'rxjs';
 import { CompaniesApiService } from '../services/companies.api';
 import * as CompanyActions from './company.actions';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Injectable()
 export class CompanyEffects {
   private actions$ = inject(Actions);
+  private notificationService = inject(NotificationService);
 
   loadCompanyEmployees$ = createEffect(() =>
     this.actions$.pipe(
@@ -162,6 +164,60 @@ export class CompanyEffects {
 
   private api = inject(CompaniesApiService);
 
+  companyCrudSuccessNotifications$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          CompanyActions.createCompanyServiceSuccess,
+          CompanyActions.updateCompanyServiceSuccess,
+          CompanyActions.deleteCompanyServiceSuccess,
+          CompanyActions.addCompanyEmployeeSuccess,
+          CompanyActions.updateCompanyEmployeeSuccess,
+          CompanyActions.deleteCompanyEmployeeSuccess,
+          CompanyActions.assignEmployeeToBookingSuccess,
+        ),
+        tap((action) => {
+          const type = action.type;
+          if (type.includes('create Company Services Success')) {
+            this.notificationService.success('Service created successfully.');
+          } else if (type.includes('update Company Services Success')) {
+            this.notificationService.success('Service updated successfully.');
+          } else if (type.includes('delete Company Services Success')) {
+            this.notificationService.success('Service deleted successfully.');
+          } else if (type.includes('Add Company Employee Success')) {
+            this.notificationService.success('Employee created successfully.');
+          } else if (type.includes('Update Company Employee Success')) {
+            this.notificationService.success('Employee updated successfully.');
+          } else if (type.includes('Delete Company Employee Success')) {
+            this.notificationService.success('Employee deleted successfully.');
+          } else {
+            this.notificationService.success('Booking updated successfully.');
+          }
+        }),
+      ),
+    { dispatch: false },
+  );
+
+  companyCrudFailureNotifications$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          CompanyActions.createCompanyServiceFailure,
+          CompanyActions.updateCompanyServiceFailure,
+          CompanyActions.deleteCompanyServiceFailure,
+          CompanyActions.addCompanyEmployeeFailure,
+          CompanyActions.updateCompanyEmployeeFailure,
+          CompanyActions.deleteCompanyEmployeeFailure,
+          CompanyActions.assignEmployeeToBookingFailure,
+        ),
+        tap(({ error }) =>
+          this.notificationService.error(
+            error?.error?.message || error?.message || 'Request failed. Please try again.',
+          ),
+        ),
+      ),
+    { dispatch: false },
+  );
+
   constructor() {}
 }
-

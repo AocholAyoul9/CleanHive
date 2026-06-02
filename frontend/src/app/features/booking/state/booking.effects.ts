@@ -2,16 +2,23 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { BookingApiService } from '../services/booking.api';
 import * as BookingActions from './booking.actions';
-import { catchError, from, map, mergeMap, of } from 'rxjs';
+import { catchError, from, map, mergeMap, of, tap } from 'rxjs';
 import { Booking } from '../models/booking.model';
 import * as ClientActions from '../../client/state/client.actions';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Injectable()
 export class BookingEffects {
   createBooking$;
   loadBookings$;
+  createBookingSuccess$;
+  createBookingFailure$;
 
-  constructor(private actions$: Actions, private api: BookingApiService) {
+  constructor(
+    private actions$: Actions,
+    private api: BookingApiService,
+    private notificationService: NotificationService,
+  ) {
     this.createBooking$ = createEffect(() =>
       this.actions$.pipe(
         ofType(BookingActions.createBooking),
@@ -43,7 +50,6 @@ export class BookingEffects {
         mergeMap(({ companyId }) =>
           this.api.getCompanyBookings(companyId).pipe(
             map((bookings) => {
-              console.log('Loaded bookings for companyId:', companyId, 'Bookings:', bookings);
               return BookingActions.loadCompanyBookingsSuccess({ bookings });
             }),
             catchError((error) =>
@@ -52,6 +58,28 @@ export class BookingEffects {
           )
         )
       )
+    );
+
+    this.createBookingSuccess$ = createEffect(
+      () =>
+        this.actions$.pipe(
+          ofType(BookingActions.createBookingSuccess),
+          tap(() => this.notificationService.success('Booking created successfully.')),
+        ),
+      { dispatch: false },
+    );
+
+    this.createBookingFailure$ = createEffect(
+      () =>
+        this.actions$.pipe(
+          ofType(BookingActions.createBookingFailure),
+          tap(({ error }) =>
+            this.notificationService.error(
+              error?.error?.message || error?.message || 'Booking creation failed.',
+            ),
+          ),
+        ),
+      { dispatch: false },
     );
   }
 }

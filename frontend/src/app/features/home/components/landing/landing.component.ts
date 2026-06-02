@@ -2,6 +2,7 @@ import { Component, signal, OnInit, OnDestroy, HostListener } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-landing',
@@ -20,7 +21,10 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   private statsAnimated = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private notificationService: NotificationService,
+  ) {}
 
   ngOnInit(): void {
     const observer = new IntersectionObserver((entries) => {
@@ -73,7 +77,7 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   useMyLocation(): void {
     if (!navigator.geolocation) {
-      alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+      this.notificationService.error('La géolocalisation n\'est pas supportée par votre navigateur.');
       return;
     }
 
@@ -105,7 +109,9 @@ export class LandingComponent implements OnInit, OnDestroy {
       },
       (err) => {
         this.geoLoading.set(false);
-        alert('Impossible d\'obtenir votre position. Veuillez la saisir manuellement.');
+        this.notificationService.error(
+          'Impossible d\'obtenir votre position. Veuillez la saisir manuellement.',
+        );
       },
       { timeout: 8000 }
     );

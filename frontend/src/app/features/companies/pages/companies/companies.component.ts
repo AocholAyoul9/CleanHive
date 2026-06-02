@@ -23,6 +23,7 @@ import {
   getPriceRange,
 } from '../../models/company.model';
 import { GeocodingService } from '../../services/geocoding.service'; // à créer
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-companies',
@@ -64,7 +65,8 @@ export class CompaniesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private store: Store,
-    private geocodingService: GeocodingService
+    private geocodingService: GeocodingService,
+    private notificationService: NotificationService,
   ) {
     this.allCompanies$ = this.store.select(CompanySelectors.selectAllCompanies);
     this.filteredCompanies$ = this.createFilteredCompanies();
@@ -344,7 +346,10 @@ export class CompaniesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   confirmBooking() {
-    if (!this.bookingCompany() || !this.selectedService()) return;
+    if (!this.bookingCompany() || !this.selectedService()) {
+      this.notificationService.error('Please select a service before confirming booking.');
+      return;
+    }
 
     const company = this.bookingCompany()!;
     const service = this.selectedService()!;
@@ -352,6 +357,7 @@ export class CompaniesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.bookingSuccess.set(
       `Réservation confirmée pour ${company.name} (${service.name}) ! Un email de confirmation vous a été envoyé.`
     );
+    this.notificationService.success('Booking created successfully.');
 
     setTimeout(() => {
       if (this.bookingSuccess()) {

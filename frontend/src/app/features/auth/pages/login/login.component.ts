@@ -1,10 +1,11 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { login } from '../../state/auth.actions';
 import { selectLoading, selectError } from '../../state/auth.selectors';
+import { NotificationService } from '../../../../core/services/notification.service';
 @Component({
   selector: 'app-login-page',
   standalone: true,
@@ -23,16 +24,24 @@ export class LoginPageComponent implements OnInit {
 
   @Output() close = new EventEmitter<void>();
 
-  constructor(private store: Store) {}
+  constructor(
+    private store: Store,
+    private notificationService: NotificationService,
+  ) {}
 
   ngOnInit(): void {
     this.loading$ = this.store.select(selectLoading);
     this.error$ = this.store.select(selectError);
   }
 
-  onSubmit(): void {
+  onSubmit(form: NgForm): void {
+    if (form.invalid) {
+      form.control.markAllAsTouched();
+      this.notificationService.error('Please complete required fields before submitting.');
+      return;
+    }
+
     const { email, password, userType } = this.loginData;
-    if (!email || !password) return;
 
     this.store.dispatch(login({ email, password, userType }));
   }
