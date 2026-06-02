@@ -1,5 +1,6 @@
 package com.shawilTech.netproxi.service;
 
+import com.shawilTech.netproxi.dto.GeocodingResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -13,13 +14,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
-// Package-private record
-record GeocodingResult(
-        Double latitude,
-        Double longitude,
-        boolean success,
-        String errorMessage) {
-}
 @Service
 public class NominatimGeocodingService {
 

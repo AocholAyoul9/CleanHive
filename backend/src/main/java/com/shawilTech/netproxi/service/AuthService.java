@@ -20,6 +20,7 @@ import com.shawilTech.netproxi.repository.CompanyRepository;
 import com.shawilTech.netproxi.repository.RoleRepository;
 import com.shawilTech.netproxi.repository.UserRepository;
 import com.shawilTech.netproxi.security.JwtTokenProvider;
+import com.shawilTech.netproxi.dto.GeocodingResult;
 
 import java.util.Collections;
 import java.util.List;
