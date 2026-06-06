@@ -12,7 +12,7 @@ public class SwaggerConfig {
     public OpenAPI identityServiceOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("CleanHive Identity Service API")
+                        .title("NetProxi Identity Service API")
                         .description("Handles authentication, registration, and user management")
                         .version("v1.0.0")
                 );
